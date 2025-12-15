@@ -1,0 +1,241 @@
+{
+  "info": {
+    "name": "LoopSync Server API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "email", "value": "" },
+    { "key": "id", "value": "" },
+    { "key": "planCode", "value": "PRO_PRIME-X" },
+    { "key": "billingCycle", "value": "MONTHLY" },
+    { "key": "pepronKey", "value": "atlas.access.ATLAS001ARCT" }
+  ],
+  "item": [
+    {
+      "name": "health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "POST /auth/signup-email",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"fullName\": \"John Doe\",\n  \"email\": \"{{email}}\",\n  \"password\": \"password123\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/signup-email","host":["{{baseUrl}}"],"path":["auth","signup-email"]}
+          }
+        },
+        {
+          "name": "POST /auth/signup-google",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"googleId\": \"gid_123\",\n  \"email\": \"{{email}}\",\n  \"fullName\": \"John Doe\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/signup-google","host":["{{baseUrl}}"],"path":["auth","signup-google"]}
+          }
+        },
+        {
+          "name": "POST /auth/login-email",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"password\": \"password123\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/login-email","host":["{{baseUrl}}"],"path":["auth","login-email"]}
+          }
+        },
+        {
+          "name": "POST /auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"refreshToken\": \"<cookie_or_token>\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/refresh","host":["{{baseUrl}}"],"path":["auth","refresh"]}
+          }
+        },
+        {
+          "name": "POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Authorization","value":"Bearer {{accessToken}}"}],
+            "url": {"raw":"{{baseUrl}}/auth/logout","host":["{{baseUrl}}"],"path":["auth","logout"]}
+          }
+        },
+        {
+          "name": "POST /auth/logout-any",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"refreshToken\": \"<refresh>\",\n  \"accessToken\": \"{{accessToken}}\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/logout-any","host":["{{baseUrl}}"],"path":["auth","logout-any"]}
+          }
+        },
+        {
+          "name": "POST /auth/help-support",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"accessToken\": \"{{accessToken}}\",\n  \"fullName\": \"John Doe\",\n  \"email\": \"{{email}}\",\n  \"userId\": \"{{userId}}\",\n  \"subject\": \"Support Needed\",\n  \"category\": \"billing\",\n  \"description\": \"Describe issue...\"\n}"},
+            "url": {"raw":"{{baseUrl}}/auth/help-support","host":["{{baseUrl}}"],"path":["auth","help-support"]}
+          }
+        },
+        {
+          "name": "POST /auth/request-email-otp",
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\"\n}"},"url":{"raw":"{{baseUrl}}/auth/request-email-otp","host":["{{baseUrl}}"],"path":["auth","request-email-otp"]}}
+        },
+        {
+          "name": "POST /auth/verify-email-otp",
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"userId\": \"{{userId}}\",\n  \"code\": \"123456\"\n}"},"url":{"raw":"{{baseUrl}}/auth/verify-email-otp","host":["{{baseUrl}}"],"path":["auth","verify-email-otp"]}}
+        },
+        {
+          "name": "GET /auth/google/login",
+          "request": {"method":"GET","url":{"raw":"{{baseUrl}}/auth/google/login","host":["{{baseUrl}}"],"path":["auth","google","login"]}}
+        },
+        {
+          "name": "GET /auth/google/callback",
+          "request": {"method":"GET","url":{"raw":"{{baseUrl}}/auth/google/callback","host":["{{baseUrl}}"],"path":["auth","google","callback"]}}
+        },
+        {
+          "name": "POST /auth/check-eligibility",
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\"\n}"},"url":{"raw":"{{baseUrl}}/auth/check-eligibility","host":["{{baseUrl}}"],"path":["auth","check-eligibility"]}}
+        },
+        {
+          "name": "POST /auth/request-password-reset",
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\"\n}"},"url":{"raw":"{{baseUrl}}/auth/request-password-reset","host":["{{baseUrl}}"],"path":["auth","request-password-reset"]}}
+        },
+        {
+          "name": "POST /auth/reset-password",
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\",\n  \"newPassword\": \"newpass123\"\n}"},"url":{"raw":"{{baseUrl}}/auth/reset-password","host":["{{baseUrl}}"],"path":["auth","reset-password"]}}
+        }
+      ]
+    },
+    {
+      "name": "plans",
+      "item": [
+        {"name":"GET /plans","request":{"method":"GET","url":{"raw":"{{baseUrl}}/plans","host":["{{baseUrl}}"],"path":["plans"]}}},
+        {"name":"POST /plans","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"code\": \"PRO_PRIME-X\",\n  \"name\": \"PRO PRIME-X\",\n  \"price\": 129900,\n  \"currency\": \"INR\",\n  \"billingCycle\": \"MONTHLY\"\n}"},"url":{"raw":"{{baseUrl}}/plans","host":["{{baseUrl}}"],"path":["plans"]}}},
+        {"name":"PATCH /plans/:id","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"PRO PRIME-X\"\n}"},"url":{"raw":"{{baseUrl}}/plans/{{id}}","host":["{{baseUrl}}"],"path":["plans","{{id}}"]}}},
+        {"name":"GET /plans/:id","request":{"method":"GET","url":{"raw":"{{baseUrl}}/plans/{{id}}","host":["{{baseUrl}}"],"path":["plans","{{id}}"]}}},
+        {"name":"GET /plans/code/:code","request":{"method":"GET","url":{"raw":"{{baseUrl}}/plans/code/{{planCode}}","host":["{{baseUrl}}"],"path":["plans","code","{{planCode}}"]}}}
+      ]
+    },
+    {
+      "name": "features",
+      "item": [
+        {"name":"GET /features","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/features","host":["{{baseUrl}}"],"path":["features"]}}},
+        {"name":"POST /features","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"key\": \"FEATURE_X\",\n  \"label\": \"Feature X\",\n  \"description\": \"desc\",\n  \"dataType\": \"BOOLEAN\"\n}"},"url":{"raw":"{{baseUrl}}/features","host":["{{baseUrl}}"],"path":["features"]}}},
+        {"name":"PATCH /features/:id","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"label\": \"Feature X Updated\"\n}"},"url":{"raw":"{{baseUrl}}/features/{{id}}","host":["{{baseUrl}}"],"path":["features","{{id}}"]}}},
+        {"name":"GET /features/me","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/features/me","host":["{{baseUrl}}"],"path":["features","me"]}}}
+      ]
+    },
+    {
+      "name": "subscriptions",
+      "item": [
+        {"name":"GET /subscriptions/me","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/subscriptions/me","host":["{{baseUrl}}"],"path":["subscriptions","me"]}}},
+        {"name":"POST /subscriptions/checkout","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"planCode\": \"{{planCode}}\",\n  \"email\": \"{{email}}\",\n  \"billingCycle\": \"{{billingCycle}}\",\n  \"isRecurring\": true,\n  \"contact\": \"7000000000\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/checkout","host":["{{baseUrl}}"],"path":["subscriptions","checkout"]}}},
+        {"name":"POST /subscriptions/check-eligibility","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"planCode\": \"PRO\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/check-eligibility","host":["{{baseUrl}}"],"path":["subscriptions","check-eligibility"]}}},
+        {"name":"POST /subscriptions/webhook","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"x-razorpay-signature","value":"<signature>"}],"body":{"mode":"raw","raw":"{\n  \"event\": \"subscription.authorized\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/webhook","host":["{{baseUrl}}"],"path":["subscriptions","webhook"]}}},
+        {"name":"POST /subscriptions/fallback-activate","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"planCode\": \"{{planCode}}\",\n  \"billingCycle\": \"{{billingCycle}}\",\n  \"isRecurring\": true,\n  \"providerSubscriptionId\": \"sub_123\",\n  \"email\": \"{{email}}\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/fallback-activate","host":["{{baseUrl}}"],"path":["subscriptions","fallback-activate"]}}},
+        {"name":"POST /subscriptions/mark-email-as-used","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/mark-email-as-used","host":["{{baseUrl}}"],"path":["subscriptions","mark-email-as-used"]}}},
+        {"name":"POST /subscriptions/update-account-type","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"accountType\": \"CUSTOMER\"\n}"},"url":{"raw":"{{baseUrl}}/subscriptions/update-account-type","host":["{{baseUrl}}"],"path":["subscriptions","update-account-type"]}}}
+      ]
+    },
+    {
+      "name": "billing",
+      "item": [
+        {"name":"POST /billing/create-order","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"amount\": 129900,\n  \"currency\": \"INR\",\n  \"receipt\": \"receipt_123\",\n  \"email\": \"{{email}}\",\n  \"planCode\": \"{{planCode}}\",\n  \"userId\": \"{{userId}}\",\n  \"billingCycle\": \"{{billingCycle}}\"\n}"},"url":{"raw":"{{baseUrl}}/billing/create-order","host":["{{baseUrl}}"],"path":["billing","create-order"]}}},
+        {"name":"POST /billing/webhook","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"x-razorpay-signature","value":"<signature>"}],"body":{"mode":"raw","raw":"{\n  \"event\": \"payment.captured\"\n}"},"url":{"raw":"{{baseUrl}}/billing/webhook","host":["{{baseUrl}}"],"path":["billing","webhook"]}}},
+        {"name":"GET /billing/details","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/billing/details","host":["{{baseUrl}}"],"path":["billing","details"]}}},
+        {"name":"GET /billing/overview","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/billing/overview","host":["{{baseUrl}}"],"path":["billing","overview"]}}},
+        {"name":"GET /billing/credits","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/billing/credits","host":["{{baseUrl}}"],"path":["billing","credits"]}}},
+        {"name":"GET /billing/credits/ledger","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/billing/credits/ledger?email={{email}}","host":["{{baseUrl}}"],"path":["billing","credits","ledger"],"query":[{"key":"email","value":"{{email}}"}]}}},
+        {"name":"GET /billing/usage/history","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/billing/usage/history?email={{email}}","host":["{{baseUrl}}"],"path":["billing","usage","history"],"query":[{"key":"email","value":"{{email}}"}]}}},
+        {"name":"POST /billing/subscription/sync","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"subscriptionId\": \"<id>\"\n}"},"url":{"raw":"{{baseUrl}}/billing/subscription/sync","host":["{{baseUrl}}"],"path":["billing","subscription","sync"]}}},
+        {"name":"POST /billing/subscription/reset","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"subscriptionId\": \"<id>\"\n}"},"url":{"raw":"{{baseUrl}}/billing/subscription/reset","host":["{{baseUrl}}"],"path":["billing","subscription","reset"]}}},
+        {"name":"POST /billing/consume","request":{"method":"POST","header":[{"key":"x-pepron-key","value":"{{pepronKey}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"cost\": 100,\n  \"resource\": \"example\",\n  \"requestId\": \"REQ-001\"\n}"},"url":{"raw":"{{baseUrl}}/billing/consume","host":["{{baseUrl}}"],"path":["billing","consume"]}}},
+        {"name":"POST /billing/credits/add","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"type\": \"prepaid\",\n  \"amount\": 100,\n  \"reason\": \"Manual credit\",\n  \"referenceId\": \"REF-001\"\n}"},"url":{"raw":"{{baseUrl}}/billing/credits/add","host":["{{baseUrl}}"],"path":["billing","credits","add"]}}},
+        {"name":"POST /billing/credits/deduct","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"amount\": 50,\n  \"deductFrom\": \"auto\",\n  \"reason\": \"Manual deduct\",\n  \"referenceId\": \"REF-002\"\n}"},"url":{"raw":"{{baseUrl}}/billing/credits/deduct","host":["{{baseUrl}}"],"path":["billing","credits","deduct"]}}}
+      ]
+    },
+    {
+      "name": "users",
+      "item": [
+        {"name":"GET /users/search","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/users/search?q={{email}}","host":["{{baseUrl}}"],"path":["users","search"],"query":[{"key":"q","value":"{{email}}"}]}}}
+      ]
+    },
+    {
+      "name": "profile",
+      "item": [
+        {"name":"GET /profile/me","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/me","host":["{{baseUrl}}"],"path":["profile","me"]}}},
+        {"name":"POST /profile/change-password","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"newPassword\": \"newpass123\",\n  \"confirmPassword\": \"newpass123\"\n}"},"url":{"raw":"{{baseUrl}}/profile/change-password","host":["{{baseUrl}}"],"path":["profile","change-password"]}}},
+        {"name":"POST /profile/request-deletion-otp","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/request-deletion-otp","host":["{{baseUrl}}"],"path":["profile","request-deletion-otp"]}}},
+        {"name":"POST /profile/confirm-deletion","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"code\": \"123456\"\n}"},"url":{"raw":"{{baseUrl}}/profile/confirm-deletion","host":["{{baseUrl}}"],"path":["profile","confirm-deletion"]}}},
+        {"name":"GET /profile/preferences","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/preferences","host":["{{baseUrl}}"],"path":["profile","preferences"]}}},
+        {"name":"POST /profile/preferences/notifications","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"value\": true\n}"},"url":{"raw":"{{baseUrl}}/profile/preferences/notifications","host":["{{baseUrl}}"],"path":["profile","preferences","notifications"]}}},
+        {"name":"POST /profile/preferences/music-experience","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"value\": true\n}"},"url":{"raw":"{{baseUrl}}/profile/preferences/music-experience","host":["{{baseUrl}}"],"path":["profile","preferences","music-experience"]}}},
+        {"name":"POST /profile/preferences/emergency-lockdown","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"value\": false\n}"},"url":{"raw":"{{baseUrl}}/profile/preferences/emergency-lockdown","host":["{{baseUrl}}"],"path":["profile","preferences","emergency-lockdown"]}}},
+        {"name":"POST /profile/preferences/stability-mode","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"value\": true\n}"},"url":{"raw":"{{baseUrl}}/profile/preferences/stability-mode","host":["{{baseUrl}}"],"path":["profile","preferences","stability-mode"]}}},
+        {"name":"GET /profile/preferences/notifications","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/preferences/notifications","host":["{{baseUrl}}"],"path":["profile","preferences","notifications"]}}},
+        {"name":"GET /profile/preferences/music-experience","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/preferences/music-experience","host":["{{baseUrl}}"],"path":["profile","preferences","music-experience"]}}},
+        {"name":"GET /profile/preferences/emergency-lockdown","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/preferences/emergency-lockdown","host":["{{baseUrl}}"],"path":["profile","preferences","emergency-lockdown"]}}},
+        {"name":"GET /profile/preferences/stability-mode","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/preferences/stability-mode","host":["{{baseUrl}}"],"path":["profile","preferences","stability-mode"]}}},
+        {"name":"GET /profile/models/status","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/profile/models/status","host":["{{baseUrl}}"],"path":["profile","models","status"]}}},
+        {"name":"POST /profile/models","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"computeMax\": true,\n  \"r3Advanced\": true,\n  \"visionPro\": true\n}"},"url":{"raw":"{{baseUrl}}/profile/models","host":["{{baseUrl}}"],"path":["profile","models"]}}}
+      ]
+    },
+    {
+      "name": "payment-methods",
+      "item": [
+        {"name":"POST /payment-methods/payment-method","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"type\": \"razorpay\",\n  \"providerDetails\": {\n    \"email\": \"{{email}}\",\n    \"contact\": \"7000000000\"\n  }\n}"},"url":{"raw":"{{baseUrl}}/payment-methods/payment-method","host":["{{baseUrl}}"],"path":["payment-methods","payment-method"]}}},
+        {"name":"POST /payment-methods/billing-address","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"addressLine1\": \"Line 1\",\n  \"addressLine2\": \"\",\n  \"city\": \"City\",\n  \"state\": \"State\",\n  \"country\": \"in\",\n  \"pinCode\": \"781318\",\n  \"phoneNumber\": \"7000000000\"\n}"},"url":{"raw":"{{baseUrl}}/payment-methods/billing-address","host":["{{baseUrl}}"],"path":["payment-methods","billing-address"]}}},
+        {"name":"GET /payment-methods/user/:userId/payment-methods","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/user/{{userId}}/payment-methods","host":["{{baseUrl}}"],"path":["payment-methods","user","{{userId}}","payment-methods"]}}},
+        {"name":"GET /payment-methods/user/:userId/billing-addresses","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/user/{{userId}}/billing-addresses","host":["{{baseUrl}}"],"path":["payment-methods","user","{{userId}}","billing-addresses"]}}},
+        {"name":"GET /payment-methods/search","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/search?email={{email}}","host":["{{baseUrl}}"],"path":["payment-methods","search"],"query":[{"key":"email","value":"{{email}}"}]}}},
+        {"name":"GET /payment-methods/user/:userId/default-payment-method","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/user/{{userId}}/default-payment-method","host":["{{baseUrl}}"],"path":["payment-methods","user","{{userId}}","default-payment-method"]}}},
+        {"name":"GET /payment-methods/user/:userId/default-billing-address","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/user/{{userId}}/default-billing-address","host":["{{baseUrl}}"],"path":["payment-methods","user","{{userId}}","default-billing-address"]}}},
+        {"name":"DELETE /payment-methods/payment-method/:id","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/payment-method/{{id}}","host":["{{baseUrl}}"],"path":["payment-methods","payment-method","{{id}}"]}}},
+        {"name":"DELETE /payment-methods/billing-address/:id","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/payment-methods/billing-address/{{id}}","host":["{{baseUrl}}"],"path":["payment-methods","billing-address","{{id}}"]}}},
+        {"name":"PUT /payment-methods/payment-method/:id","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"providerDetails\": {\n    \"email\": \"{{email}}\"\n  }\n}"},"url":{"raw":"{{baseUrl}}/payment-methods/payment-method/{{id}}","host":["{{baseUrl}}"],"path":["payment-methods","payment-method","{{id}}"]}}},
+        {"name":"PUT /payment-methods/billing-address/:id","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"addressLine1\": \"Updated Line\"\n}"},"url":{"raw":"{{baseUrl}}/payment-methods/billing-address/{{id}}","host":["{{baseUrl}}"],"path":["payment-methods","billing-address","{{id}}"]}}}
+      ]
+    },
+    {
+      "name": "upgrade",
+      "item": [
+        {"name":"POST /upgrade/checkout","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"contact\": \"7000000000\",\n  \"newPlanCode\": \"{{planCode}}\",\n  \"billingCycle\": \"{{billingCycle}}\"\n}"},"url":{"raw":"{{baseUrl}}/upgrade/checkout","host":["{{baseUrl}}"],"path":["upgrade","checkout"]}}}
+      ]
+    },
+    {
+      "name": "prompt",
+      "item": [
+        {"name":"POST /v1/prompt/sanitize","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"rawPrompt\": \"Hello\",\n  \"provider\": \"openai\",\n  \"scope\": \"default\"\n}"},"url":{"raw":"{{baseUrl}}/v1/prompt/sanitize","host":["{{baseUrl}}"],"path":["v1","prompt","sanitize"]}}}
+      ]
+    },
+    {
+      "name": "admin",
+      "item": [
+        {"name":"GET /admin/users","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/admin/users","host":["{{baseUrl}}"],"path":["admin","users"]}}},
+        {"name":"GET /admin/users/:id","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/admin/users/{{id}}","host":["{{baseUrl}}"],"path":["admin","users","{{id}}"]}}},
+        {"name":"GET /admin/subscribed-users","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":{"raw":"{{baseUrl}}/admin/subscribed-users","host":["{{baseUrl}}"],"path":["admin","subscribed-users"]}}},
+        {"name":"POST /admin/notify-all","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"title\": \"Announcement\",\n  \"description\": \"Message body\"\n}"},"url":{"raw":"{{baseUrl}}/admin/notify-all","host":["{{baseUrl}}"],"path":["admin","notify-all"]}}},
+        {"name":"POST /admin/notify-user","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"userId\": \"{{userId}}\",\n  \"title\": \"Notice\",\n  \"description\": \"Message body\"\n}"},"url":{"raw":"{{baseUrl}}/admin/notify-user","host":["{{baseUrl}}"],"path":["admin","notify-user"]}}}
+      ]
+    }
+  ]
+}
