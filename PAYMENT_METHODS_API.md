@@ -5,7 +5,7 @@ This document describes the API endpoints for managing user payment methods and 
 ## Base URL
 
 ```
-http://localhost:8000/payment-methods
+https://srv01.loopsync.cloud/payment-methods
 ```
 
 ## Authentication
@@ -170,7 +170,7 @@ Delete a billing address.
 ### Save a Razorpay payment method
 
 ```bash
-curl -X POST http://localhost:8000/payment-methods/payment-method \
+curl -X POST https://srv01.loopsync.cloud/payment-methods/payment-method \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <jwt_token>" \
   -d '{
@@ -186,7 +186,7 @@ curl -X POST http://localhost:8000/payment-methods/payment-method \
 ### Save a billing address
 
 ```bash
-curl -X POST http://localhost:8000/payment-methods/billing-address \
+curl -X POST https://srv01.loopsync.cloud/payment-methods/billing-address \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <jwt_token>" \
   -d '{
@@ -204,6 +204,6 @@ curl -X POST http://localhost:8000/payment-methods/billing-address \
 ### Search for user's payment methods and billing addresses
 
 ```bash
-curl -X GET "http://localhost:8000/payment-methods/search?email=user@example.com" \
+curl -X GET "https://srv01.loopsync.cloud/payment-methods/search?email=user@example.com" \
   -H "Authorization: Bearer <jwt_token>"
 ```

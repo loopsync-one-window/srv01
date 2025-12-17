@@ -49,7 +49,7 @@ async function testWebhook() {
     console.log('Webhook data to send:', JSON.stringify(webhookData, null, 2));
     
     // Make a request to our webhook endpoint
-    const response = await fetch('http://localhost:8000/subscriptions/webhook', {
+    const response = await fetch('https://srv01.loopsync.cloud/subscriptions/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

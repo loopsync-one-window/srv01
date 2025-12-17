@@ -75,7 +75,7 @@ src/
 
 Once the server is running, you can access the Swagger API documentation at:
 ```
-http://localhost:8000/api
+https://srv01.loopsync.cloud/api
 
 ### Atlas Models API
 

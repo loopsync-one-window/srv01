@@ -31,7 +31,7 @@ async function generateTestToken() {
     console.log(accessToken);
     
     // Test the admin endpoint with this token
-    const response = await fetch('http://localhost:8000/admin/subscribed-users', {
+    const response = await fetch('https://srv01.loopsync.cloud/admin/subscribed-users', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

@@ -1,7 +1,7 @@
 // Simple test script to verify payment methods API
 // This script assumes you have a valid JWT token
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://srv01.loopsync.cloud';
 
 // Replace with a valid JWT token from a logged in user
 const JWT_TOKEN = 'YOUR_JWT_TOKEN_HERE';
