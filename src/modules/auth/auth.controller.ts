@@ -253,11 +253,11 @@ export class AuthController {
     if (user.accountType === 'VISITOR') {
       // Redirect to plan selection page with user data
       return res.redirect(
-        `http://localhost:3000/open-account?pro=true&userData=${userData}`,
+        `https://www.loopsync.cloud/open-account?pro=true&userData=${userData}`,
       );
     } else {
       // Redirect to home page
-      return res.redirect('http://localhost:3000/home');
+      return res.redirect('https://www.loopsync.cloud/home');
     }
   }
 
