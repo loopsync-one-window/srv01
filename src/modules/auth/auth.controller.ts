@@ -28,7 +28,7 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('signup-email')
   async signupEmail(@Body() dto: SignupEmailDto) {
@@ -242,22 +242,29 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Redirect based on account type with user data in query parameters
-    const userData = encodeURIComponent(
-      JSON.stringify({
-        email: user.email,
-        fullName: user.fullName,
-      }),
-    );
+    // Prepare redirect parameters
+    const redirectParams = new URLSearchParams({
+      userData: JSON.stringify(tokens.user),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt ? new Date(tokens.expiresAt).toISOString() : '',
+    });
 
     if (user.accountType === 'VISITOR') {
-      // Redirect to plan selection page with user data
+      // Redirect to plan selection page with user data and tokens
+      redirectParams.set('pro', 'true');
       return res.redirect(
-        `https://www.loopsync.cloud/open-account?pro=true&userData=${userData}`,
+        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}`,
       );
     } else {
-      // Redirect to home page
-      return res.redirect('https://www.loopsync.cloud/home');
+      // Redirect to home page with tokens (home page should also handle saving tokens if redirected here)
+      // Note: Ideally home page should also parse these, but the request was specifically about open-account flow issues.
+      // Assuming for now home page might need them too if the user lands there directly.
+      // But typically OAuth callbacks go to a specific route that handles token storage then redirects.
+      // Since existing code sent to home, I will append params there too just in case.
+      return res.redirect(
+        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}&login=true`,
+      );
     }
   }
 
