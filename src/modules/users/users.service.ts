@@ -12,7 +12,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   async findOneByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
@@ -412,5 +412,36 @@ export class UsersService {
       'Model Vision Pro',
       value,
     );
+  }
+  async deleteUserDirectly(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const existingEligible = await (
+      this.prisma as any
+    ).eligibleEmail.findUnique({
+      where: { email: user.email },
+    });
+
+    await this.prisma.$transaction([
+      (this.prisma as any).subscription.deleteMany({ where: { userId } }),
+      (this.prisma as any).emailOtp.deleteMany({ where: { userId } }),
+      (this.prisma as any).userFeatureOverride.deleteMany({
+        where: { userId },
+      }),
+      (this.prisma as any).paymentMethod.deleteMany({ where: { userId } }),
+      (this.prisma as any).billingAddress.deleteMany({ where: { userId } }),
+      (this.prisma as any).user.delete({ where: { id: userId } }),
+    ]);
+
+    await (this.prisma as any).eligibleEmail.upsert({
+      where: { email: user.email },
+      update: { isUsed: existingEligible ? existingEligible.isUsed : false },
+      create: { email: user.email, isUsed: false },
+    });
+
+    return { success: true, message: 'Account deleted' };
   }
 }

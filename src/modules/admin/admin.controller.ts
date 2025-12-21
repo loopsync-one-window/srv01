@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Post, Body, Delete } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
@@ -17,7 +17,7 @@ export class AdminController {
     private readonly featuresService: FeaturesService,
     private readonly subscriptionsService: SubscriptionsService,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('users')
@@ -65,7 +65,7 @@ export class AdminController {
         try {
           await this.emailService.sendMailFrom(from, u.email, subject, html);
           sent++;
-        } catch {}
+        } catch { }
       }
     }
     return { success: true, sent, total: users.length };
@@ -97,5 +97,11 @@ export class AdminController {
     `;
     await this.emailService.sendMailFrom(from, user.email, subject, html);
     return { success: true };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('users/:id')
+  async deleteUser(@Param('id') id: string) {
+    return this.usersService.deleteUserDirectly(id);
   }
 }
