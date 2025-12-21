@@ -508,6 +508,9 @@ export class SubscriptionsService {
       // If subscription doesn't exist, create it
       if (!existingSubscription) {
         const startDate = startTime ? new Date(startTime * 1000) : undefined;
+        // For recurring subscriptions created via webhook, we prefer the actual payment ID if available
+        const actualPaymentId = paymentData?.id || subscriptionId; // fallback to subId if no payment ID
+
         existingSubscription = await this.createRecurringSubscription(
           user.id,
           plan.id,
@@ -518,17 +521,28 @@ export class SubscriptionsService {
           cycleNorm,
         );
 
+        // Update to set the correct providerPaymentId immediately
+        if (actualPaymentId !== subscriptionId) {
+          existingSubscription = await this.prisma.subscription.update({
+            where: { id: existingSubscription.id },
+            data: { providerPaymentId: actualPaymentId }
+          });
+        }
+
         console.log(
           'Created new subscription in database:',
           existingSubscription,
         );
       } else {
         // Update existing subscription if needed
+        const actualPaymentId = paymentData?.id || existingSubscription.providerPaymentId;
+
         existingSubscription = await this.prisma.subscription.update({
           where: { id: existingSubscription.id },
           data: {
             status: 'ACTIVE',
             providerSubscriptionId: subscriptionId,
+            providerPaymentId: actualPaymentId,
             autoRenew: true,
             ...(startTime ? { startedAt: new Date(startTime * 1000) } : {}),
           },
