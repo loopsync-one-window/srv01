@@ -38,20 +38,56 @@ export class EmailService {
     });
   }
 
-  async sendOtpEmail(to: string, code: string) {
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Email Verification</h2>
-        <p>Your verification code is:</p>
-        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px;">
-          ${code}
+  private getStyledTemplate(title: string, bodyContent: string): string {
+    return `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+        
+        <!-- Header / Logo Text -->
+        <div style="margin-bottom: 40px;">
+           <span style="font-size: 24px; font-weight: 800; color: #000000; letter-spacing: -0.5px;">LOOPSYNC ONE WINDOW™</span>
         </div>
-        <p>This code will expire in 10 minutes.</p>
-        <p>If you didn't request this code, please ignore this email.</p>
+
+        <!-- Headline -->
+        <h1 style="font-size: 32px; font-weight: 700; margin: 0 0 24px 0; color: #1a1a1a; letter-spacing: -0.5px;">${title}</h1>
+
+        <!-- Content -->
+        <div style="font-size: 16px; line-height: 1.6; color: #4a4a4a;">
+          ${bodyContent}
+        </div>
+
+        <!-- Signature -->
+        <div style="margin-top: 50px; font-size: 16px; color: #4a4a4a;">
+          <p style="margin: 0;">So long, and thanks for all the fish,</p>
+          <p style="margin: 4px 0 0 0; font-weight: 700; color: #000000;">The LoopSync Team</p>
+        </div>
+
+        <!-- Divider -->
+        <hr style="border: 0; border-top: 1px solid #e5e5e5; margin: 40px 0 24px 0;" />
+
+        <!-- Footer -->
+        <div style="font-size: 13px; color: #999999; line-height: 1.5;">
+          <p style="margin: 0 0 4px 0;">&copy; 2025 INTELLARIS PRIVATE LIMITED</p>
+          <p style="margin: 0;">For questions contact <a href="mailto:support@loopsync.cloud" style="color: #999999; text-decoration: none;">support@loopsync.cloud</a></p>
+        </div>
+
       </div>
     `;
+  }
 
-    await this.sendMail(to, 'Email Verification Code', html);
+  async sendOtpEmail(to: string, code: string) {
+    const content = `
+      <p style="margin-bottom: 24px;">Hi,</p>
+      <p style="margin-bottom: 24px;">Thank you for creating a LoopSync account. Please use the code below to validate your email address.</p>
+      
+      <div style="background-color: #fafafa; padding: 32px 0; text-align: center; margin: 32px 0; border-radius: 4px;">
+        <span style="font-size: 32px; font-weight: 700; color: #000000; letter-spacing: 2px;">${code}</span>
+      </div>
+
+      <p style="margin-top: 32px;">If you did not create a new account, please ignore this email.</p>
+    `;
+
+    const html = this.getStyledTemplate('Validate your email', content);
+    await this.sendMail(to, 'Validate your email', html);
   }
 
   async sendPaymentSuccessEmail(
@@ -61,39 +97,49 @@ export class EmailService {
     isFreeTrial: boolean,
   ) {
     const formattedAmount = (amount / 100).toFixed(2);
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Payment Successful</h2>
-        <p>Thank you for your subscription to LoopSync!</p>
-        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Subscription Details</h3>
-          <p><strong>Plan:</strong> ${planName}</p>
-          <p><strong>Amount:</strong> ₹${formattedAmount}</p>
-          <p><strong>Type:</strong> ${isFreeTrial ? 'Free Trial (7 days)' : 'Paid Subscription'}</p>
-        </div>
-        <p>Your subscription is now active and you can start using all the features of LoopSync.</p>
-        <p>If you have any questions, feel free to contact our support team.</p>
-        <p>Thank you for choosing LoopSync!</p>
+    const content = `
+      <p style="margin-bottom: 24px;">Hi,</p>
+      <p style="margin-bottom: 24px;">Thank you for your subscription to LoopSync One Window™.</p>
+      
+      <div style="background-color: #fafafa; padding: 24px; border-radius: 4px; margin: 32px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #000;">Subscription Details</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Plan</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">${planName}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Amount</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">₹${formattedAmount}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Type</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">${isFreeTrial ? 'Free Trial (7 days)' : 'Paid Subscription'}</td>
+           </tr>
+        </table>
       </div>
+
+      <p>Your subscription is now active and you can start using all the features of LoopSync.</p>
     `;
 
+    const html = this.getStyledTemplate('Payment Successful', content);
     await this.sendMail(to, 'Payment Successful - LoopSync Subscription', html);
   }
 
   async sendSubscriptionCancellationEmail(to: string, planName: string) {
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Subscription Cancelled</h2>
-        <p>We're sorry to see you go. Your subscription to LoopSync has been cancelled.</p>
-        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Subscription</h3>
-          <p><strong>Plan:</strong> ${planName}</p>
-        </div>
-        <p>We hope you enjoyed using LoopSync. If you have any feedback, we'd love to hear it.</p>
-        <p>You can always resubscribe at any time by visiting our website.</p>
+    const content = `
+      <p style="margin-bottom: 24px;">Hi,</p>
+      <p>We're sorry to see you go. Your subscription to LoopSync has been cancelled.</p>
+       
+      <div style="background-color: #fafafa; padding: 24px; border-radius: 4px; margin: 32px 0;">
+         <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #000;">Cancelled Plan</h3>
+         <p style="margin: 0; color: #000; font-weight: 500;">${planName}</p>
       </div>
+
+      <p>We hope you enjoyed using LoopSync. You can always resubscribe at any time.</p>
     `;
 
+    const html = this.getStyledTemplate('Subscription Cancelled', content);
     await this.sendMail(to, 'Subscription Cancelled - LoopSync', html);
   }
 
@@ -104,21 +150,32 @@ export class EmailService {
     errorDescription: string,
   ) {
     const formattedAmount = (amount / 100).toFixed(2);
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Payment Failed</h2>
-        <p>We're sorry, but your payment for LoopSync subscription has failed.</p>
-        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Payment Details</h3>
-          <p><strong>Amount:</strong> ₹${formattedAmount}</p>
-          <p><strong>Error Code:</strong> ${errorCode}</p>
-          <p><strong>Error Description:</strong> ${errorDescription}</p>
-        </div>
-        <p>Please try again or contact our support team if you continue to experience issues.</p>
-        <p>We apologize for any inconvenience this may have caused.</p>
+    const content = `
+      <p style="margin-bottom: 24px;">Hi,</p>
+      <p>We're sorry, but your payment for LoopSync subscription has failed.</p>
+      
+      <div style="background-color: #fafafa; padding: 24px; border-radius: 4px; margin: 32px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #000;">Failure Details</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Amount Attempted</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">₹${formattedAmount}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Error Code</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">${errorCode}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Reason</td>
+             <td style="padding: 8px 0; text-align: right; font-weight: 500; color: #000;">${errorDescription}</td>
+           </tr>
+        </table>
       </div>
+
+      <p>Please try again or contact our support team if you continue to experience issues.</p>
     `;
 
+    const html = this.getStyledTemplate('Payment Failed', content);
     await this.sendMail(to, 'Payment Failed - LoopSync Subscription', html);
   }
 }
