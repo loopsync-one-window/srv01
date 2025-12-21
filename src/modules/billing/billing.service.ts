@@ -296,20 +296,24 @@ export class BillingService {
     });
     if (!user) return { success: false, message: 'User not found' };
 
-    if (user.trialCreditsClaimed) {
-      return { success: false, message: 'Trial credits already claimed', code: 'ALREADY_CLAIMED' };
+    // Atomic check-and-set to prevent race conditions
+    const updateResult = await (this.prisma as any).user.updateMany({
+      where: {
+        id: user.id,
+        trialCreditsClaimed: false,
+      },
+      data: { trialCreditsClaimed: true },
+    });
+
+    if (updateResult.count === 0) {
+      return {
+        success: false,
+        message: 'Trial credits already claimed',
+        code: 'ALREADY_CLAIMED',
+      };
     }
 
-    const result = await this.addCredits(payload);
-
-    if (result.success) {
-      await (this.prisma as any).user.update({
-        where: { id: user.id },
-        data: { trialCreditsClaimed: true },
-      });
-    }
-
-    return result;
+    return this.addCredits(payload);
   }
 
   async getTrialCreditsStatus(userId: string) {
