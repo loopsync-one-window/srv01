@@ -35,6 +35,8 @@ model User {
   accountType       AccountType
   onboard           Boolean  @default(false)
   trialNotify       Boolean  @default(false)
+  credits           Int      @default(0)
+  trialCreditsClaimed Boolean @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

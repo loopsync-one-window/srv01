@@ -145,6 +145,25 @@ export class BillingController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Post('trial/credits/add')
+  async addTrialCredits(@Body() body: any) {
+    return this.billingService.addTrialCredits({
+      email: body?.email,
+      type: body?.type,
+      amount: body?.amount,
+      reason: body?.reason,
+      referenceId: body?.referenceId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('trial/credits/status')
+  async getTrialCreditsStatus(@Req() req: any) {
+    const userId = req.user.id;
+    return this.billingService.getTrialCreditsStatus(userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Post('credits/deduct')
   async deductCredits(@Body() body: any) {
     return this.billingService.deductCredits({

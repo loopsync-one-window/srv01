@@ -284,6 +284,42 @@ export class BillingService {
     };
   }
 
+  async addTrialCredits(payload: {
+    email: string;
+    type: 'prepaid' | 'free';
+    amount: number;
+    reason: string;
+    referenceId: string;
+  }) {
+    const user = await (this.prisma as any).user.findUnique({
+      where: { email: payload.email },
+    });
+    if (!user) return { success: false, message: 'User not found' };
+
+    if (user.trialCreditsClaimed) {
+      return { success: false, message: 'Trial credits already claimed', code: 'ALREADY_CLAIMED' };
+    }
+
+    const result = await this.addCredits(payload);
+
+    if (result.success) {
+      await (this.prisma as any).user.update({
+        where: { id: user.id },
+        data: { trialCreditsClaimed: true },
+      });
+    }
+
+    return result;
+  }
+
+  async getTrialCreditsStatus(userId: string) {
+    const user = await (this.prisma as any).user.findUnique({
+      where: { id: userId },
+      select: { trialCreditsClaimed: true },
+    });
+    return { success: true, claimed: user?.trialCreditsClaimed || false };
+  }
+
   async deductCredits(payload: {
     email: string;
     amount: number;
