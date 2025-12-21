@@ -13,7 +13,7 @@ export class SubscriptionsService {
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   // Expose prisma for other services to use
   getPrisma() {
@@ -188,10 +188,10 @@ export class SubscriptionsService {
         isFreeTrial,
         paymentMethod: defaultPaymentMethod
           ? {
-              id: defaultPaymentMethod.id,
-              type: defaultPaymentMethod.type,
-              providerDetails: defaultPaymentMethod.providerDetails,
-            }
+            id: defaultPaymentMethod.id,
+            type: defaultPaymentMethod.type,
+            providerDetails: defaultPaymentMethod.providerDetails,
+          }
           : null,
       },
     };
@@ -434,8 +434,8 @@ export class SubscriptionsService {
       let resolvedPlanCode: string | undefined = planCode;
       let plan = resolvedPlanCode
         ? await this.prisma.plan.findUnique({
-            where: { code: resolvedPlanCode },
-          })
+          where: { code: resolvedPlanCode },
+        })
         : null;
 
       // Validate autopay payment amount and resolve plan if missing
@@ -458,8 +458,8 @@ export class SubscriptionsService {
         }
         plan = resolvedPlanCode
           ? await this.prisma.plan.findUnique({
-              where: { code: resolvedPlanCode },
-            })
+            where: { code: resolvedPlanCode },
+          })
           : null;
       }
       if (!plan) {
@@ -642,7 +642,26 @@ export class SubscriptionsService {
       const startedAt = new Date(subscription.startedAt).getTime();
       const now = Date.now();
       const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      return now - startedAt <= sevenDaysMs;
+
+      const isWithinTrialPeriod = now - startedAt <= sevenDaysMs;
+      if (!isWithinTrialPeriod) return false;
+
+      // Check for any paid invoice > 2.00 INR (200 paise) for this user created after subscription start
+      // This confirms actual payment was made, overriding free trial logic
+      const paidInvoice = await (this.prisma as any).invoice.findFirst({
+        where: {
+          userId: subscription.userId,
+          status: 'PAID',
+          amount: { gt: 500 }, // > 5 INR to be safe (auth charges are usually 1-2 INR)
+          createdAt: { gte: new Date(subscription.startedAt) },
+        },
+      });
+
+      if (paidInvoice) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
@@ -1004,7 +1023,7 @@ export class SubscriptionsService {
       if (email) {
         try {
           await this.markEmailAsUsed(email);
-        } catch {}
+        } catch { }
       }
       return { success: true, message: 'Authorization acknowledged' };
     } catch (error) {
@@ -1163,8 +1182,8 @@ export class SubscriptionsService {
     const providerStatus = provider?.provider?.status;
     const isAutopayCancelled = providerStatus
       ? providerStatus.toLowerCase() === 'cancelled' ||
-        providerStatus.toLowerCase() === 'halted' ||
-        providerStatus.toLowerCase() === 'paused'
+      providerStatus.toLowerCase() === 'halted' ||
+      providerStatus.toLowerCase() === 'paused'
       : false;
 
     const isFreeTrial = await this.computeIsFreeTrial(subscription);
