@@ -164,6 +164,14 @@ export class BillingController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Post('admin/user-details')
+  async getAdminUserDetails(@Body() body: any) {
+    const { email } = body || {};
+    if (!email) return { success: false, message: 'Email required' };
+    return this.billingService.getAdminUserDetails(email);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Post('credits/deduct')
   async deductCredits(@Body() body: any) {
     return this.billingService.deductCredits({

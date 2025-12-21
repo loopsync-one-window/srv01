@@ -316,6 +316,43 @@ export class BillingService {
     return this.addCredits(payload);
   }
 
+  async getAdminUserDetails(email: string) {
+    const user = await (this.prisma as any).user.findUnique({
+      where: { email },
+    });
+    if (!user) return { success: false, message: 'User not found' };
+
+    const prepaid = await this.getUserNumberOverride(
+      user.id,
+      'CREDITS_PREPAID',
+      0,
+    );
+    const free = await this.getUserNumberOverride(user.id, 'CREDITS_FREE', 0);
+    const usage = await this.getUserNumberOverride(user.id, 'USAGE_USED', 0);
+
+    const invoices = this.ledger
+      .filter((l) => l.email === email)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 50);
+
+    return {
+      success: true,
+      data: {
+        credits: {
+          prepaid: Number(prepaid.toFixed(2)),
+          free: Number(free.toFixed(2)),
+        },
+        usage: {
+          total: Number(usage.toFixed(2)),
+        },
+        invoices,
+      },
+    };
+  }
+
   async getTrialCreditsStatus(userId: string) {
     const user = await (this.prisma as any).user.findUnique({
       where: { id: userId },
