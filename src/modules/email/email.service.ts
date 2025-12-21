@@ -44,11 +44,10 @@ export class EmailService {
         
         <!-- Header / Logo Text -->
         <div style="margin-bottom: 40px;">
-           <span style="font-size: 24px; font-weight: 800; color: #000000; letter-spacing: -0.5px;">LOOPSYNC ONE WINDOW™</span>
+           <span style="font-size: 16px; font-weight: 800; color: #000000; letter-spacing: -0.5px;">LOOPSYNC ONE WINDOW™</span>
         </div>
-
         <!-- Headline -->
-        <h1 style="font-size: 32px; font-weight: 700; margin: 0 0 24px 0; color: #1a1a1a; letter-spacing: -0.5px;">${title}</h1>
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1a1a1a; letter-spacing: -0.5px;">${title}</h1>
 
         <!-- Content -->
         <div style="font-size: 16px; line-height: 1.6; color: #4a4a4a;">
