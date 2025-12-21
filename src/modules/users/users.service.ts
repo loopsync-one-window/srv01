@@ -433,6 +433,7 @@ export class UsersService {
       }),
       (this.prisma as any).paymentMethod.deleteMany({ where: { userId } }),
       (this.prisma as any).billingAddress.deleteMany({ where: { userId } }),
+      (this.prisma as any).invoice.deleteMany({ where: { userId } }),
       (this.prisma as any).user.delete({ where: { id: userId } }),
     ]);
 
