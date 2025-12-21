@@ -11,14 +11,30 @@ import { AuthGuard } from '@nestjs/passport';
 import { BillingService } from './billing.service';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('billing')
 @Controller('billing')
 export class BillingController {
   constructor(
+    private configService: ConfigService,
+    private readonly prisma: PrismaService,
     private readonly billingService: BillingService,
     private readonly usersService: UsersService,
-  ) {}
+  ) {
+    const keyId = this.configService.get<string>('razorpay.keyId');
+  }
+
+  @Post('webhook/payment-details')
+  async getPaymentDetails(@Body() body: any) {
+    if (body.paymentId) {
+      return this.billingService.getPaymentDetails(body.paymentId);
+    } else if (body.subscriptionId) {
+      return this.billingService.getSubscriptionDetails(body.subscriptionId);
+    }
+    return { success: false, error: 'Either paymentId or subscriptionId is required' };
+  }
 
   private async getUserEmail(userId: string) {
     const user = await this.usersService.findOneById(userId);

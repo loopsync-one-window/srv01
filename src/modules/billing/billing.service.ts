@@ -31,6 +31,28 @@ export class BillingService {
     });
   }
 
+  getRazorpay() {
+    return this.razorpay;
+  }
+
+  async getPaymentDetails(paymentId: string) {
+    try {
+      const payment = await this.razorpay.payments.fetch(paymentId);
+      return { success: true, payment };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getSubscriptionDetails(subscriptionId: string) {
+    try {
+      const subscription = await this.razorpay.subscriptions.fetch(subscriptionId);
+      return { success: true, subscription };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
   private computeExpectedAmountPaise(
     planCode: string,
     cycle: 'MONTHLY' | 'ANNUAL',
@@ -133,25 +155,25 @@ export class BillingService {
     const remainingCap = Math.max(0, totalCap - used);
     const daysRemaining = subscription
       ? Math.max(
-          0,
-          Math.ceil(
-            ((new Date(subscription.expiresAt) as any) - (new Date() as any)) /
-              (24 * 60 * 60 * 1000),
-          ),
-        )
+        0,
+        Math.ceil(
+          ((new Date(subscription.expiresAt) as any) - (new Date() as any)) /
+          (24 * 60 * 60 * 1000),
+        ),
+      )
       : 0;
     return {
       success: true,
       data: {
         subscription: subscription
           ? {
-              planName: subscription.plan.name,
-              status: subscription.status,
-              startDate: subscription.startedAt,
-              endDate: subscription.expiresAt,
-              daysRemaining,
-              autoRenew: subscription.autoRenew,
-            }
+            planName: subscription.plan.name,
+            status: subscription.status,
+            startDate: subscription.startedAt,
+            endDate: subscription.expiresAt,
+            daysRemaining,
+            autoRenew: subscription.autoRenew,
+          }
           : null,
         credits: {
           prepaid: { balance: Number(prepaid.toFixed(2)) },
@@ -167,16 +189,16 @@ export class BillingService {
         },
         nextInvoice: subscription
           ? Number(
-              (
-                this.computeExpectedAmountPaise(
-                  subscription.plan.code,
-                  this.deriveCycleFromDates(
-                    subscription.startedAt,
-                    subscription.expiresAt,
-                  ),
-                ) || subscription.plan.price
-              ).toFixed(2),
-            )
+            (
+              this.computeExpectedAmountPaise(
+                subscription.plan.code,
+                this.deriveCycleFromDates(
+                  subscription.startedAt,
+                  subscription.expiresAt,
+                ),
+              ) || subscription.plan.price
+            ).toFixed(2),
+          )
           : 0,
       },
     };
@@ -372,7 +394,7 @@ export class BillingService {
           isFreeTrial = Date.now() - startedAt <= sevenDaysMs;
         }
       }
-    } catch {}
+    } catch { }
 
     let fromFree = 0;
     let fromPrepaid = 0;
@@ -465,13 +487,13 @@ export class BillingService {
   async syncSubscription(userId: string, subscriptionId?: string) {
     const subscription = subscriptionId
       ? await (this.prisma as any).subscription.findUnique({
-          where: { id: subscriptionId },
-          include: { plan: true },
-        })
+        where: { id: subscriptionId },
+        include: { plan: true },
+      })
       : await (this.prisma as any).subscription.findFirst({
-          where: { userId, status: 'ACTIVE' },
-          include: { plan: true },
-        });
+        where: { userId, status: 'ACTIVE' },
+        include: { plan: true },
+      });
     if (!subscription)
       return { success: false, message: 'Subscription not found' };
     const prepaid =
@@ -517,13 +539,13 @@ export class BillingService {
   async resetSubscription(userId: string, subscriptionId?: string) {
     const subscription = subscriptionId
       ? await (this.prisma as any).subscription.findUnique({
-          where: { id: subscriptionId },
-          include: { plan: true },
-        })
+        where: { id: subscriptionId },
+        include: { plan: true },
+      })
       : await (this.prisma as any).subscription.findFirst({
-          where: { userId, status: 'ACTIVE' },
-          include: { plan: true },
-        });
+        where: { userId, status: 'ACTIVE' },
+        include: { plan: true },
+      });
     if (!subscription)
       return { success: false, message: 'Subscription not found' };
     const prepaid =
@@ -614,33 +636,33 @@ export class BillingService {
       endDate: subscription ? subscription.expiresAt : null,
       amount: subscription
         ? this.computeExpectedAmountPaise(
-            subscription.plan.code,
-            this.deriveCycleFromDates(
-              subscription.startedAt,
-              subscription.expiresAt,
-            ),
-          ) || subscription.plan.price
+          subscription.plan.code,
+          this.deriveCycleFromDates(
+            subscription.startedAt,
+            subscription.expiresAt,
+          ),
+        ) || subscription.plan.price
         : null,
       currency: subscription ? subscription.plan.currency : null,
       billingEmail: subscription ? subscription.user.email : null,
       billingAddress: defaultBillingAddress
         ? {
-            id: defaultBillingAddress.id,
-            addressLine1: defaultBillingAddress.addressLine1,
-            addressLine2: defaultBillingAddress.addressLine2,
-            city: defaultBillingAddress.city,
-            state: defaultBillingAddress.state,
-            country: defaultBillingAddress.country,
-            pinCode: defaultBillingAddress.pinCode,
-            phoneNumber: defaultBillingAddress.phoneNumber,
-          }
+          id: defaultBillingAddress.id,
+          addressLine1: defaultBillingAddress.addressLine1,
+          addressLine2: defaultBillingAddress.addressLine2,
+          city: defaultBillingAddress.city,
+          state: defaultBillingAddress.state,
+          country: defaultBillingAddress.country,
+          pinCode: defaultBillingAddress.pinCode,
+          phoneNumber: defaultBillingAddress.phoneNumber,
+        }
         : null,
       paymentMethod: defaultPaymentMethod
         ? {
-            id: defaultPaymentMethod.id,
-            type: defaultPaymentMethod.type,
-            providerDetails: defaultPaymentMethod.providerDetails,
-          }
+          id: defaultPaymentMethod.id,
+          type: defaultPaymentMethod.type,
+          providerDetails: defaultPaymentMethod.providerDetails,
+        }
         : null,
       paymentId: subscription ? subscription.providerPaymentId : null,
     };
