@@ -17,6 +17,7 @@ import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.
 import { PromptModule } from './modules/prompt/prompt.module';
 import { UpgradeModule } from './modules/upgrade/upgrade.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { SupportModule } from './modules/support/support.module';
 
 @Module({
   imports: [
@@ -40,8 +41,9 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
     PromptModule,
     UpgradeModule,
     InvoicesModule,
+    SupportModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

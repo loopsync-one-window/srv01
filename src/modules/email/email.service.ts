@@ -177,4 +177,34 @@ export class EmailService {
     const html = this.getStyledTemplate('Payment Failed', content);
     await this.sendMail(to, 'Payment Failed - LoopSync Subscription', html);
   }
+
+  async sendSupportEmail(name: string, email: string, topic: string, message: string) {
+    const content = `
+      <div style="background-color: #fafafa; padding: 24px; border-radius: 4px; margin: 32px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #000;">Support Request Details</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+           <tr>
+             <td style="padding: 8px 0; color: #666; width: 120px;">Name</td>
+             <td style="padding: 8px 0; font-weight: 500; color: #000;">${name}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Email</td>
+             <td style="padding: 8px 0; font-weight: 500; color: #000;">${email}</td>
+           </tr>
+           <tr>
+             <td style="padding: 8px 0; color: #666;">Topic</td>
+             <td style="padding: 8px 0; font-weight: 500; color: #000;">${topic}</td>
+           </tr>
+        </table>
+        
+        <div style="margin-top: 24px;">
+          <p style="color: #666; margin-bottom: 8px;">Message:</p>
+          <div style="background-color: #fff; padding: 16px; border: 1px solid #e5e5e5; border-radius: 4px; color: #000; white-space: pre-wrap;">${message}</div>
+        </div>
+      </div>
+    `;
+
+    const html = this.getStyledTemplate('New Support Request', content);
+    await this.sendMail('ripun@intellaris.co', `Support Request: ${topic} from ${name}`, html);
+  }
 }
