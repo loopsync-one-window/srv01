@@ -18,6 +18,7 @@ import { PromptModule } from './modules/prompt/prompt.module';
 import { UpgradeModule } from './modules/upgrade/upgrade.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { SupportModule } from './modules/support/support.module';
+import { AcquireModule } from './modules/acquire/acquire.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SupportModule } from './modules/support/support.module';
     UpgradeModule,
     InvoicesModule,
     SupportModule,
+    AcquireModule,
   ],
   controllers: [],
   providers: [],
