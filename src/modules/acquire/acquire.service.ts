@@ -2,28 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { EmailService } from '../email/email.service';
 
 export interface AcquisitionInquiryDto {
-    name: string;
-    email: string;
-    organization: string;
-    role: string;
-    buyerType: string;
-    acquisitionScope: string;
-    timeline: string;
-    message: string;
-    acknowledgement: boolean;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organization: string;
+  role: string;
+  buyerType: string;
+  acquisitionScope: string;
+  timeline: string;
+  message: string;
+  acknowledgement: boolean;
 }
 
 @Injectable()
 export class AcquireService {
-    constructor(private readonly emailService: EmailService) { }
+  constructor(private readonly emailService: EmailService) { }
 
-    async handleInquiry(data: AcquisitionInquiryDto) {
-        const { name, email } = data;
-        const subject = 'LoopSync Acquisition Inquiry Received';
+  async handleInquiry(data: AcquisitionInquiryDto) {
+    const { name, email } = data;
+    const subject = 'LoopSync Acquisition Inquiry Received';
 
-        // Minimalistic Template
-        const htmlContent = `
-      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; color: #000000; font-size: 11px; line-height: 1.6;">
+    // Minimalistic Template
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background-color: #ffffff; border: 1px solid #c4c4c4ff; border-radius: 20px; color: #000000; font-size: 13px; line-height: 1.6;">
         <p style="margin-top: 0;">Hello ${name},</p>
 
         <p>Thank you for reaching out regarding a potential acquisition of LoopSync.</p>
@@ -45,25 +46,26 @@ export class AcquireService {
       </div>
     `;
 
-        // Send to User
-        await this.emailService.sendMail(email, subject, htmlContent);
+    // Send to User
+    await this.emailService.sendMail(email, subject, htmlContent);
 
-        // Send to Internal Team (using same template for now, or could include form details)
-        // The user requirement says "details will sent to both acquire@loopsync.cloud and user"
-        // Usually internal email should have the form data.
-        // "the details will sent to both ... and user provided email"
-        // But the text provided is clearly for the user: "Hello {{Name}}... We’ve received your inquiry..."
-        // If I send the SAME text to acquire@loopsync.cloud, it's weird but maybe acceptable as a notification.
-        // However, usually "details sent to acquire@loopsync.cloud" means the FORM DATA.
+    // Send to Internal Team (using same template for now, or could include form details)
+    // The user requirement says "details will sent to both acquire@loopsync.cloud and user"
+    // Usually internal email should have the form data.
+    // "the details will sent to both ... and user provided email"
+    // But the text provided is clearly for the user: "Hello {{Name}}... We’ve received your inquiry..."
+    // If I send the SAME text to acquire@loopsync.cloud, it's weird but maybe acceptable as a notification.
+    // However, usually "details sent to acquire@loopsync.cloud" means the FORM DATA.
 
-        // I will send the formatted acknowledgement to the user.
-        // And for the internal team, I will send the form data so they can actually review it.
+    // I will send the formatted acknowledgement to the user.
+    // And for the internal team, I will send the form data so they can actually review it.
 
-        const internalHtml = `
+    const internalHtml = `
       <div style="font-family: sans-serif; padding: 20px;">
         <h2>New Acquisition Inquiry</h2>
         <p><strong>Name:</strong> ${data.name}</p>
         <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Phone:</strong> ${data.phoneNumber}</p>
         <p><strong>Organization:</strong> ${data.organization}</p>
         <p><strong>Role:</strong> ${data.role}</p>
         <p><strong>Buyer Type:</strong> ${data.buyerType}</p>
@@ -74,6 +76,6 @@ export class AcquireService {
       </div>
     `;
 
-        await this.emailService.sendMail('acquire@loopsync.cloud', `New Acquisition Inquiry: ${data.name}`, internalHtml);
-    }
+    await this.emailService.sendMail('acquire@loopsync.cloud', `New Acquisition Inquiry: ${data.name}`, internalHtml);
+  }
 }
