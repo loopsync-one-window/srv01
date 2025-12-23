@@ -256,6 +256,11 @@ export class AuthController {
       return res.redirect(
         `https://www.loopsync.cloud/open-account?${redirectParams.toString()}`,
       );
+    } else if (user.accountType === 'CUSTOMER') {
+      // Redirect to home page with tokens for CUSTOMER accounts
+      return res.redirect(
+        `https://www.loopsync.cloud/home?${redirectParams.toString()}`,
+      );
     } else {
       // Redirect to home page with tokens (home page should also handle saving tokens if redirected here)
       // Note: Ideally home page should also parse these, but the request was specifically about open-account flow issues.
