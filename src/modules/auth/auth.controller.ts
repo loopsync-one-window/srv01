@@ -223,52 +223,64 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req: any, @Res() res: Response) {
-    // req.user contains the user info from GoogleStrategy
-    const { googleId, email, fullName } = req.user;
+    try {
+      console.log('Google Callback initiated. User:', req.user);
+      // req.user contains the user info from GoogleStrategy
+      const { googleId, email, fullName } = req.user;
 
-    // Register or login the user
-    const user = await this.authService.registerWithGoogle(
-      googleId,
-      email,
-      fullName,
-    );
-    const tokens = await this.authService.login(user);
-
-    // Set refresh token as HTTP-only cookie
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    // Prepare redirect parameters
-    const redirectParams = new URLSearchParams({
-      userData: JSON.stringify(tokens.user),
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresAt: tokens.expiresAt ? new Date(tokens.expiresAt).toISOString() : '',
-    });
-
-    if (user.accountType === 'VISITOR') {
-      // Redirect to plan selection page with user data and tokens
-      redirectParams.set('pro', 'true');
-      return res.redirect(
-        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}`,
+      // Register or login the user
+      const user = await this.authService.registerWithGoogle(
+        googleId,
+        email,
+        fullName,
       );
-    } else if (user.accountType === 'CUSTOMER') {
-      // Redirect to home page with tokens for CUSTOMER accounts
+
+      console.log('User registered/logged in via Google:', user.id, user.email, 'Account Type:', user.accountType);
+
+      const tokens = await this.authService.login(user);
+
+      // Set refresh token as HTTP-only cookie
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      // Prepare redirect parameters
+      const redirectParams = new URLSearchParams({
+        userData: JSON.stringify(tokens.user),
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt ? new Date(tokens.expiresAt).toISOString() : '',
+      });
+
+      if (user.accountType === 'VISITOR') {
+        // Redirect to plan selection page with user data and tokens
+        console.log('Redirecting VISITOR to open-account/pro');
+        redirectParams.set('pro', 'true');
+        return res.redirect(
+          `https://www.loopsync.cloud/open-account?${redirectParams.toString()}`,
+        );
+      } else if (user.accountType === 'CUSTOMER') {
+        // Redirect to home page with tokens for CUSTOMER accounts
+        console.log('Redirecting CUSTOMER to home');
+        return res.redirect(
+          `https://www.loopsync.cloud/home?${redirectParams.toString()}`,
+        );
+      } else {
+        // Redirect to home page with tokens (home page should also handle saving tokens if redirected here)
+        console.log('Redirecting other account type to open-account/login', user.accountType);
+        return res.redirect(
+          `https://www.loopsync.cloud/open-account?${redirectParams.toString()}&login=true`,
+        );
+      }
+    } catch (error) {
+      console.error('Error in Google Callback:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      // Redirect to frontend with error details
       return res.redirect(
-        `https://www.loopsync.cloud/home?${redirectParams.toString()}`,
-      );
-    } else {
-      // Redirect to home page with tokens (home page should also handle saving tokens if redirected here)
-      // Note: Ideally home page should also parse these, but the request was specifically about open-account flow issues.
-      // Assuming for now home page might need them too if the user lands there directly.
-      // But typically OAuth callbacks go to a specific route that handles token storage then redirects.
-      // Since existing code sent to home, I will append params there too just in case.
-      return res.redirect(
-        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}&login=true`,
+        `https://www.loopsync.cloud/open-account?login=true&error=GoogleCallbackError&reason=${encodeURIComponent(errorMessage)}`
       );
     }
   }
