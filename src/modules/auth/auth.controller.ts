@@ -254,12 +254,12 @@ export class AuthController {
       // Redirect to plan selection page with user data and tokens
       redirectParams.set('pro', 'true');
       return res.redirect(
-        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}`,
+        `http://localhost:3000/open-account?${redirectParams.toString()}`,
       );
     } else if (user.accountType === 'CUSTOMER') {
       // Redirect to home page with tokens for CUSTOMER accounts
       return res.redirect(
-        `https://www.loopsync.cloud/home?${redirectParams.toString()}`,
+        `http://localhost:3000/home?${redirectParams.toString()}`,
       );
     } else {
       // Redirect to home page with tokens (home page should also handle saving tokens if redirected here)
@@ -268,7 +268,7 @@ export class AuthController {
       // But typically OAuth callbacks go to a specific route that handles token storage then redirects.
       // Since existing code sent to home, I will append params there too just in case.
       return res.redirect(
-        `https://www.loopsync.cloud/open-account?${redirectParams.toString()}&login=true`,
+        `http://localhost:3000/open-account?${redirectParams.toString()}&login=true`,
       );
     }
   }
