@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
   Redirect,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -97,6 +98,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.authService.refreshAccessToken(dto.refreshToken);
+    if ('developer' in tokens) {
+      throw new UnauthorizedException('Invalid token type');
+    }
 
     // Set new refresh token as HTTP-only cookie
     res.cookie('refreshToken', tokens.refreshToken, {

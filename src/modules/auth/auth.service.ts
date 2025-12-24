@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from '../email/email.service';
-import { AuthProvider, UserStatus, AccountType } from '.prisma/client';
+import { AuthProvider, UserStatus, AccountType, DeveloperStatus } from '.prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -239,9 +239,13 @@ export class AuthService {
 
   async refreshAccessToken(refreshToken: string) {
     try {
-      const payload = this.jwtService.verify(refreshToken, {
+      const payload: any = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('jwt.refreshSecret'),
       });
+
+      if (payload.role === 'DEVELOPER') {
+        return this.refreshDeveloperToken(refreshToken);
+      }
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -562,9 +566,13 @@ export class AuthService {
       data: { refreshTokenHash: hashedRefreshToken },
     });
 
+    const decoded: any = this.jwtService.decode(accessToken);
+    const expiresAt = decoded?.exp ? decoded.exp * 1000 : undefined;
+
     return {
       accessToken,
       refreshToken,
+      expiresAt,
       developer: {
         id: developer.id,
         fullName: developer.fullName,
@@ -598,7 +606,23 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      return this.loginDeveloper(developer);
+      const loginRes = await this.loginDeveloper(developer);
+
+      if (developer.status === DeveloperStatus.PENDING_PAYMENT) {
+        return {
+          ...loginRes,
+          paymentRequired: true,
+          developerId: developer.id,
+          pricing: {
+            baseFee: 1.00,
+            tax: 1.00,
+            verifiedBadgeFee: 1.00,
+            currency: 'INR',
+          },
+        };
+      }
+
+      return loginRes;
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }

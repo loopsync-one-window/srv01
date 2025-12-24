@@ -120,6 +120,11 @@ export class AuthV1Controller {
             // Try User Refresh
             try {
                 const userTokens = await this.authService.refreshAccessToken(refreshToken);
+
+                if ('developer' in userTokens) {
+                    throw new UnauthorizedException('Invalid refresh token');
+                }
+
                 res.cookie('refreshToken', userTokens.refreshToken, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
