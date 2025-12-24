@@ -33,6 +33,13 @@ export class DevelopersController {
                 sameSite: 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
+
+            return {
+                ...result,
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                expiresAt: tokens.expiresAt,
+            };
         }
 
         return result;
