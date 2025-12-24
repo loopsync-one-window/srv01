@@ -284,7 +284,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch {}
+      } catch { }
     }
     if (!userId && accessToken) {
       try {
@@ -293,7 +293,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch {}
+      } catch { }
     }
     if (!userId) {
       return { message: 'No valid token provided' };
@@ -520,6 +520,58 @@ export class AuthService {
       data: { passwordHash: hashedPassword },
     });
 
+
     return { message: 'Password reset successfully' };
+  }
+
+  async validateDeveloper(email: string, password: string): Promise<any> {
+    const developer = await this.prisma.developer.findUnique({ where: { email } });
+
+    if (!developer || !developer.passwordHash) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, developer.passwordHash);
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, refreshTokenHash, ...result } = developer;
+    return result;
+  }
+
+  async loginDeveloper(developer: any) {
+    const payload = { email: developer.email, sub: developer.id, role: 'DEVELOPER' };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('jwt.secret'),
+      expiresIn: '15m',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('jwt.refreshSecret'),
+      expiresIn: '7d',
+    });
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, this.saltRounds);
+
+    await this.prisma.developer.update({
+      where: { id: developer.id },
+      data: { refreshTokenHash: hashedRefreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      developer: {
+        id: developer.id,
+        fullName: developer.fullName,
+        role: developer.role,
+        accountStatus: developer.status, // User asked for accountStatus: "active" but schema is status: "ACTIVE"
+        verifiedBadge: developer.verifiedBadge,
+      },
+    };
   }
 }

@@ -19,6 +19,7 @@ import { UpgradeModule } from './modules/upgrade/upgrade.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { SupportModule } from './modules/support/support.module';
 import { AcquireModule } from './modules/acquire/acquire.module';
+import { DevelopersModule } from './modules/developers/developers.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AcquireModule } from './modules/acquire/acquire.module';
     InvoicesModule,
     SupportModule,
     AcquireModule,
+    DevelopersModule,
   ],
   controllers: [],
   providers: [],
