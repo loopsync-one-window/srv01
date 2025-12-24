@@ -3,6 +3,7 @@ import { Controller, Post, Body, Res, HttpCode, HttpStatus, UnauthorizedExceptio
 import { Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { LoginEmailDto } from '../auth/dto/login-email.dto';
+import { DeveloperStatus } from '@prisma/client';
 
 @Controller('api/v1/auth')
 export class AuthV1Controller {
@@ -18,6 +19,20 @@ export class AuthV1Controller {
         const developer = await this.authService.validateDeveloper(dto.email, dto.password);
 
         if (developer) {
+            if (developer.status === DeveloperStatus.PENDING_PAYMENT) {
+                return {
+                    paymentRequired: true,
+                    developerId: developer.id,
+                    message: "Payment not completed",
+                    pricing: {
+                        baseFee: 1.00,
+                        tax: 1.00,
+                        verifiedBadgeFee: 1.00,
+                        currency: 'INR',
+                    }
+                };
+            }
+
             const tokens = await this.authService.loginDeveloper(developer);
 
             res.cookie('refreshToken', tokens.refreshToken, {
