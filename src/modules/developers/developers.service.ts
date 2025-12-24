@@ -148,4 +148,42 @@ export class DevelopersService {
             },
         };
     }
+
+    // Admin Methods
+    async findAll() {
+        return this.prisma.developer.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                paymentOrders: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1, // Get latest payment order status
+                },
+            },
+        });
+    }
+
+    async findOneById(id: string) {
+        return this.prisma.developer.findUnique({
+            where: { id },
+            include: {
+                paymentOrders: {
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
+        });
+    }
+
+    async delete(id: string) {
+        // Delete related payment orders first if necessary (Prisma usually handles cascade if configured, but let's be safe or let cascade handle it)
+        // Checking schema, cascade isn't explicitly defined in relation, so might need to delete manually or expect cascade. 
+        // Default prisma relations don't cascade unless specified in schema with onDelete: Cascade.
+        // Let's delete related data first to be safe.
+        await this.prisma.developerPaymentOrder.deleteMany({
+            where: { developerId: id },
+        });
+
+        return this.prisma.developer.delete({
+            where: { id },
+        });
+    }
 }

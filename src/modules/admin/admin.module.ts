@@ -10,9 +10,10 @@ import { BillingModule } from '../billing/billing.module';
 import { PlansModule } from '../plans/plans.module';
 import { AuthModule } from '../auth/auth.module';
 import { EmailModule } from '../email/email.module';
+import { DevelopersModule } from '../developers/developers.module';
 
 @Module({
-  imports: [UsersModule, BillingModule, PlansModule, AuthModule, EmailModule],
+  imports: [UsersModule, BillingModule, PlansModule, AuthModule, EmailModule, DevelopersModule],
   controllers: [AdminController],
   providers: [
     PrismaService,
@@ -22,4 +23,4 @@ import { EmailModule } from '../email/email.module';
     SubscriptionsService,
   ],
 })
-export class AdminModule {}
+export class AdminModule { }

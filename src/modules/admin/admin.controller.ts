@@ -6,6 +6,7 @@ import { FeaturesService } from '../features/features.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EmailService } from '../email/email.service';
+import { DevelopersService } from '../developers/developers.service';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -17,6 +18,7 @@ export class AdminController {
     private readonly featuresService: FeaturesService,
     private readonly subscriptionsService: SubscriptionsService,
     private readonly emailService: EmailService,
+    private readonly developersService: DevelopersService,
   ) { }
 
   @UseGuards(AuthGuard('jwt'))
@@ -103,5 +105,24 @@ export class AdminController {
   @Delete('users/:id')
   async deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUserDirectly(id);
+  }
+
+  // Developer Admin APIs
+  @UseGuards(AuthGuard('jwt'))
+  @Get('developers')
+  async getAllDevelopers() {
+    return this.developersService.findAll();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('developers/:id')
+  async getDeveloper(@Param('id') id: string) {
+    return this.developersService.findOneById(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('developers/:id')
+  async deleteDeveloper(@Param('id') id: string) {
+    return this.developersService.delete(id);
   }
 }
