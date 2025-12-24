@@ -574,4 +574,33 @@ export class AuthService {
       },
     };
   }
+
+  async refreshDeveloperToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get<string>('jwt.refreshSecret'),
+      });
+
+      const developer = await this.prisma.developer.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!developer || !developer.refreshTokenHash) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        developer.refreshTokenHash,
+      );
+
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      return this.loginDeveloper(developer);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
 }

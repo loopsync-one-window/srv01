@@ -1,6 +1,5 @@
-
-import { Controller, Post, Body, Res, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Post, Body, Res, Req, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { Response, Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { LoginEmailDto } from '../auth/dto/login-email.dto';
 import { DeveloperStatus } from '@prisma/client';
@@ -42,12 +41,8 @@ export class AuthV1Controller {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
 
-            res.cookie('access_token', tokens.accessToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-                maxAge: 15 * 60 * 1000,
-            });
+            // Developer Access Token returned in JSON only (memory storage)
+            // No access_token cookie for developers as requested
 
             return tokens;
         }
@@ -79,6 +74,76 @@ export class AuthV1Controller {
             };
         } catch (error) {
             throw new UnauthorizedException('Invalid credentials');
+        }
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('refresh')
+    async refresh(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const refreshToken = req.cookies['refreshToken'];
+
+        if (!refreshToken) {
+            throw new UnauthorizedException('Refresh token not found');
+        }
+
+        try {
+            // Try developer refresh first
+            const tokens = await this.authService.refreshDeveloperToken(refreshToken);
+
+            // Check status again in case they are still pending (edge case if they got a token somehow)
+            if (tokens.developer.accountStatus === DeveloperStatus.PENDING_PAYMENT) {
+                return {
+                    paymentRequired: true,
+                    developerId: tokens.developer.id,
+                    message: "Payment not completed",
+                    pricing: {
+                        baseFee: 1.00,
+                        tax: 1.00,
+                        verifiedBadgeFee: 1.00,
+                        currency: 'INR',
+                    }
+                };
+            }
+
+            res.cookie('refreshToken', tokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            return tokens;
+        } catch (e) {
+            // Try User Refresh
+            try {
+                const userTokens = await this.authService.refreshAccessToken(refreshToken);
+                res.cookie('refreshToken', userTokens.refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    maxAge: 7 * 24 * 60 * 60 * 1000,
+                });
+
+                // Existing users expect access_token cookie?
+                res.cookie('access_token', userTokens.accessToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    maxAge: 15 * 60 * 1000,
+                });
+
+                return {
+                    accessToken: userTokens.accessToken,
+                    refreshToken: userTokens.refreshToken,
+                    expiresAt: userTokens.expiresAt,
+                    user: userTokens.user,
+                };
+            } catch (userError) {
+                throw new UnauthorizedException('Invalid refresh token');
+            }
         }
     }
 }
