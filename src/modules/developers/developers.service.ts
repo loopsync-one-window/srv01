@@ -76,8 +76,10 @@ export class DevelopersService {
         const verifiedFee = dto.verifiedBadge ? 1.00 : 0;
         const totalAmount = baseFee + tax + verifiedFee;
 
+        const amountInPaisa = Math.round(totalAmount * 100);
+
         const order = await this.razorpay.orders.create({
-            amount: Math.round(totalAmount * 100), // in paise
+            amount: amountInPaisa,
             currency: 'INR',
             receipt: developer.id,
         });
@@ -86,7 +88,7 @@ export class DevelopersService {
             data: {
                 developerId: developer.id,
                 orderId: order.id,
-                amount: totalAmount,
+                amount: totalAmount, // Store in Rupees in DB for readability/consistency with other monetary fields
                 currency: 'INR',
                 status: DeveloperPaymentStatus.PENDING,
             },
@@ -103,7 +105,7 @@ export class DevelopersService {
         return {
             success: true,
             orderId: order.id,
-            amount: totalAmount,
+            amount: amountInPaisa, // Return in Paise to frontend
             currency: 'INR',
         };
     }
