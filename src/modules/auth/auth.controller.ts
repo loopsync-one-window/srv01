@@ -98,9 +98,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.authService.refreshAccessToken(dto.refreshToken);
-    if ('developer' in tokens) {
-      throw new UnauthorizedException('Invalid token type');
-    }
+    // if ('developer' in tokens) {
+    //   throw new UnauthorizedException('Invalid token type');
+    // }
 
     // Set new refresh token as HTTP-only cookie
     res.cookie('refreshToken', tokens.refreshToken, {
@@ -109,6 +109,10 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    if ('developer' in tokens) {
+      return tokens;
+    }
 
     return {
       accessToken: tokens.accessToken,

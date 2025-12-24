@@ -575,6 +575,7 @@ export class AuthService {
       expiresAt,
       developer: {
         id: developer.id,
+        email: developer.email,
         fullName: developer.fullName,
         role: developer.role,
         accountStatus: developer.status, // User asked for accountStatus: "active" but schema is status: "ACTIVE"
