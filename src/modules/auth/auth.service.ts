@@ -614,9 +614,9 @@ export class AuthService {
           paymentRequired: true,
           developerId: developer.id,
           pricing: {
-            baseFee: 1.00,
-            tax: 1.00,
-            verifiedBadgeFee: 1.00,
+            baseFee: 388.04,
+            tax: 69.85,
+            verifiedBadgeFee: 399.89,
             currency: 'INR',
           },
         };

@@ -57,9 +57,9 @@ export class DevelopersService {
                 version: 'Perpetual License - vPA4',
             },
             pricing: {
-                baseFee: 1.00,
-                tax: 1.00,
-                verifiedBadgeFee: 1.00,
+                baseFee: 388.04,
+                tax: 69.85,
+                verifiedBadgeFee: 399.89,
                 currency: 'INR',
             },
         };
@@ -71,9 +71,9 @@ export class DevelopersService {
         });
         if (!developer) throw new NotFoundException('Developer not found');
 
-        const baseFee = 1.00;
-        const tax = 1.00;
-        const verifiedFee = dto.verifiedBadge ? 1.00 : 0;
+        const baseFee = 388.04;
+        const tax = 69.85;
+        const verifiedFee = dto.verifiedBadge ? 399.89 : 0;
         const totalAmount = baseFee + tax + verifiedFee;
 
         const amountInPaisa = Math.round(totalAmount * 100);
