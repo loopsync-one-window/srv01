@@ -445,4 +445,17 @@ export class UsersService {
 
     return { success: true, message: 'Account deleted' };
   }
+
+  async deleteUsersBulk(userIds: string[]) {
+    const results = [];
+    for (const id of userIds) {
+      try {
+        await this.deleteUserDirectly(id);
+        results.push({ id, status: 'success' });
+      } catch (error) {
+        results.push({ id, status: 'failed', error: error.message });
+      }
+    }
+    return { success: true, results };
+  }
 }

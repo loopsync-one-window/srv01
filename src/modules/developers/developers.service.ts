@@ -57,11 +57,17 @@ export class DevelopersService {
                 version: 'Perpetual License - vPA4',
             },
             pricing: {
-                baseFee: 388.04,
-                tax: 69.85,
-                verifiedBadgeFee: 399.89,
+                baseFee: 1.04,
+                tax: 1.50,
+                verifiedBadgeFee: 1.90,
                 currency: 'INR',
             },
+            // pricing: {
+            //     baseFee: 388.04,
+            //     tax: 69.85,
+            //     verifiedBadgeFee: 399.89,
+            //     currency: 'INR',
+            // },
         };
     }
 

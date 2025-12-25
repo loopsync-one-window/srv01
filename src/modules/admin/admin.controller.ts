@@ -107,6 +107,12 @@ export class AdminController {
     return this.usersService.deleteUserDirectly(id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('users/bulk-delete')
+  async deleteUsersBulk(@Body() body: { ids: string[] }) {
+    return this.usersService.deleteUsersBulk(body.ids);
+  }
+
   // Developer Admin APIs
   @UseGuards(AuthGuard('jwt'))
   @Get('developers')
