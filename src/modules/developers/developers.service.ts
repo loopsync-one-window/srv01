@@ -14,6 +14,7 @@ import { RegisterDeveloperDto } from './dto/register-developer.dto';
 import { CreatePaymentOrderDto } from './dto/create-payment-order.dto';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import { DeveloperStatus, DeveloperPaymentStatus } from '@prisma/client';
+import { UpdateProfileDto, UpdateNotificationsDto, DeleteAccountDto } from './dto/settings.dto';
 
 @Injectable()
 export class DevelopersService {
@@ -183,10 +184,7 @@ export class DevelopersService {
     }
 
     async delete(id: string) {
-        // Delete related payment orders first if necessary (Prisma usually handles cascade if configured, but let's be safe or let cascade handle it)
-        // Checking schema, cascade isn't explicitly defined in relation, so might need to delete manually or expect cascade. 
-        // Default prisma relations don't cascade unless specified in schema with onDelete: Cascade.
-        // Let's delete related data first to be safe.
+        await this.prisma.developerApiKey.deleteMany({ where: { developerId: id } });
         await this.prisma.developerPaymentOrder.deleteMany({
             where: { developerId: id },
         });
@@ -194,5 +192,141 @@ export class DevelopersService {
         return this.prisma.developer.delete({
             where: { id },
         });
+    }
+
+    // Settings Methods
+
+    async getProfile(developerId: string) {
+        const developer = await this.prisma.developer.findUnique({
+            where: { id: developerId },
+            select: {
+                fullName: true,
+                email: true,
+                bio: true,
+                avatarUrl: true,
+                visibility: true,
+            },
+        });
+        if (!developer) throw new NotFoundException('Developer not found');
+        return {
+            displayName: developer.fullName, // Mapping fullName to displayName as per req, or strict mapping
+            email: developer.email,
+            bio: developer.bio,
+            avatarUrl: developer.avatarUrl || 'https://cdn.loopsync.cloud/avatar.png',
+            visibility: developer.visibility,
+        };
+    }
+
+    async updateProfile(developerId: string, dto: UpdateProfileDto) {
+        const data: any = {};
+        if (dto.displayName) data.fullName = dto.displayName; // Mapping back
+        if (dto.bio !== undefined) data.bio = dto.bio;
+
+        return this.prisma.developer.update({
+            where: { id: developerId },
+            data,
+            select: { fullName: true, bio: true },
+        });
+    }
+
+    async getApiKeys(developerId: string) {
+        const keys = await this.prisma.developerApiKey.findMany({
+            where: { developerId },
+            orderBy: { createdAt: 'desc' },
+        });
+        return {
+            keys: keys.map(k => ({
+                id: k.id,
+                type: k.type,
+                prefix: k.prefix,
+                createdAt: k.createdAt.toISOString().split('T')[0],
+                status: k.status,
+            })),
+        };
+    }
+
+    async rollApiKey(developerId: string, keyId: string) {
+        const key = await this.prisma.developerApiKey.findUnique({
+            where: { id: keyId },
+        });
+
+        if (!key || key.developerId !== developerId) {
+            // Ideally 404
+            if (!key) throw new NotFoundException('API Key not found');
+            // Or if verifying ownership, maybe 404 to hide existence
+            throw new NotFoundException('API Key not found');
+        }
+
+        const rawKey = this.generateRandomKey(key.type);
+        const keyHash = await bcrypt.hash(rawKey, 10);
+        const prefix = rawKey.substring(0, 20) + '...';
+
+        await this.prisma.developerApiKey.update({
+            where: { id: keyId },
+            data: {
+                keyHash,
+                prefix,
+                status: 'active', // Reactivate if it was disabled? "Regenerate" usually implies generic new active key
+            },
+        });
+
+        return { newKey: rawKey };
+    }
+
+    async createApiKey(developerId: string, type: string) {
+        const rawKey = this.generateRandomKey(type);
+        const keyHash = await bcrypt.hash(rawKey, 10);
+        const prefix = rawKey.substring(0, 20) + '...';
+
+        const key = await this.prisma.developerApiKey.create({
+            data: {
+                developerId,
+                type,
+                keyHash,
+                prefix,
+                status: 'active',
+            },
+        });
+
+        return {
+            id: key.id,
+            key: rawKey,
+            type: key.type,
+            prefix: key.prefix,
+            status: key.status,
+            createdAt: key.createdAt.toISOString().split('T')[0],
+        };
+    }
+
+    private generateRandomKey(type: string) {
+        const randomPart = crypto.randomBytes(32).toString('hex');
+        const prefix = type === 'production' ? 'pro_live_' : 'pro_test_';
+        return `${prefix}${randomPart}`;
+    }
+
+    async getNotifications(developerId: string) {
+        const dev = await this.prisma.developer.findUnique({
+            where: { id: developerId },
+            select: { deploymentStatus: true, payoutUpdates: true, marketingEmails: true },
+        });
+        if (!dev) throw new NotFoundException('Developer not found');
+        return dev;
+    }
+
+    async updateNotifications(developerId: string, dto: UpdateNotificationsDto) {
+        return this.prisma.developer.update({
+            where: { id: developerId },
+            data: { ...dto },
+            select: { deploymentStatus: true, payoutUpdates: true, marketingEmails: true },
+        });
+    }
+
+    async deleteAccount(developerId: string, dto: DeleteAccountDto) {
+        if (!dto.confirm) throw new BadRequestException('Confirmation required');
+
+        // Detailed cleanup
+        await this.delete(developerId);
+
+        return { success: true };
     }
 }

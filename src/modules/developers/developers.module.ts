@@ -7,9 +7,11 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 
+import { SettingsController } from './settings.controller';
+
 @Module({
     imports: [PrismaModule, ConfigModule, AuthModule],
-    controllers: [DevelopersController, AuthV1Controller],
+    controllers: [DevelopersController, AuthV1Controller, SettingsController],
     providers: [DevelopersService],
     exports: [DevelopersService],
 })

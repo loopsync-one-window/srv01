@@ -22,7 +22,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(payload: any) {
+    if (payload.role === 'DEVELOPER') {
+      const developer = await this.prisma.developer.findUnique({
+        where: { id: payload.sub },
+      });
+      if (!developer) {
+        throw new UnauthorizedException('Invalid developer token');
+      }
+      const { passwordHash, refreshTokenHash, ...result } = developer;
+      return result;
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });

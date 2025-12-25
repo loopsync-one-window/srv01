@@ -242,6 +242,17 @@ model Developer {
   updatedAt        DateTime        @updatedAt
 
   paymentOrders DeveloperPaymentOrder[]
+  apiKeys       DeveloperApiKey[]
+
+  // Profile Settings
+  bio         String?
+  avatarUrl   String?
+  visibility  String  @default("public") // "public" or "private"
+
+  // Notification Preferences
+  deploymentStatus Boolean @default(true)
+  payoutUpdates    Boolean @default(true)
+  marketingEmails  Boolean @default(false)
 }
 
 model DeveloperPaymentOrder {
@@ -254,4 +265,18 @@ model DeveloperPaymentOrder {
   status      DeveloperPaymentStatus @default(PENDING)
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
+}
+
+model DeveloperApiKey {
+  id          String    @id @default(cuid())
+  developerId String
+  developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  type        String    // "production" | "test"
+  prefix      String    // Store first few chars for display
+  keyHash     String    // Securely stored hash
+  status      String    @default("active") // "active" | "disabled"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([developerId])
 }
