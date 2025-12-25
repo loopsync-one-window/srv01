@@ -77,9 +77,12 @@ export class DevelopersService {
         });
         if (!developer) throw new NotFoundException('Developer not found');
 
-        const baseFee = 388.04;
-        const tax = 69.85;
-        const verifiedFee = dto.verifiedBadge ? 399.89 : 0;
+        // const baseFee = 388.04;
+        // const tax = 69.85;
+        // const verifiedFee = dto.verifiedBadge ? 399.89 : 0;
+        const baseFee = 1.04;
+        const tax = 1.50;
+        const verifiedFee = dto.verifiedBadge ? 1.90 : 0;
         const totalAmount = baseFee + tax + verifiedFee;
 
         const amountInPaisa = Math.round(totalAmount * 100);
