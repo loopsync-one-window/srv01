@@ -3,7 +3,7 @@ import { Controller, Get, Post, Body, Param, UseGuards, NotFoundException } from
 import { AuthGuard } from '@nestjs/passport';
 import { DevelopersService } from './developers.service';
 
-@Controller('api/v1/admin/apps')
+@Controller('admin/apps')
 @UseGuards(AuthGuard('jwt')) // Ideally add Admin Role Guard here
 export class AdminAppsController {
     constructor(private readonly developersService: DevelopersService) { }
