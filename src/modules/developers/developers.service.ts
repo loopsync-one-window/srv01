@@ -5,6 +5,7 @@ import {
     BadRequestException,
     NotFoundException,
     InternalServerErrorException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -74,9 +75,9 @@ export class DevelopersService {
                 version: 'Perpetual License - vPA4',
             },
             pricing: {
-                baseFee: 1.04,
-                tax: 1.50,
-                verifiedBadgeFee: 1.90,
+                baseFee: 388.04,
+                tax: 69.85,
+                verifiedBadgeFee: 399.89,
                 currency: 'INR',
             }
         };
@@ -88,12 +89,12 @@ export class DevelopersService {
         });
         if (!developer) throw new NotFoundException('Developer not found');
 
-        // const baseFee = 388.04;
-        // const tax = 69.85;
-        // const verifiedFee = dto.verifiedBadge ? 399.89 : 0;
-        const baseFee = 1.04;
-        const tax = 1.50;
-        const verifiedFee = dto.verifiedBadge ? 1.90 : 0;
+        const baseFee = 388.04;
+        const tax = 69.85;
+        const verifiedFee = dto.verifiedBadge ? 399.89 : 0;
+        // const baseFee = 1.04;
+        // const tax = 1.50;
+        // const verifiedFee = dto.verifiedBadge ? 1.90 : 0;
         const totalAmount = baseFee + tax + verifiedFee;
 
         const amountInPaisa = Math.round(totalAmount * 100);
@@ -178,6 +179,9 @@ export class DevelopersService {
                     orderBy: { createdAt: 'desc' },
                     take: 1, // Get latest payment order status
                 },
+                _count: {
+                    select: { apps: true }
+                }
             },
         });
     }
@@ -654,7 +658,8 @@ export class DevelopersService {
                     return icons['512'] || icons['144'] || Object.values(icons)[0] || null;
                 }
                 return null;
-            })()
+            })(),
+            rejectionReason: (app as any).rejectionReason || null
         }));
 
         // Generate activity from apps
@@ -706,6 +711,10 @@ export class DevelopersService {
         let app = await this.prisma.app.findUnique({ where: { id: appId } });
         if (!app || app.developerId !== developerId) {
             throw new NotFoundException("App not found or access denied");
+        }
+
+        if (app.status === 'terminated') {
+            throw new ForbiddenException("This application has been terminated due to policy violations. Access is restricted.");
         }
 
         // Check for verifyKey, handling potential stale Prisma Client type definition
@@ -896,6 +905,17 @@ export class DevelopersService {
                 status: 'rejected',
                 // @ts-ignore
                 rejectionReason: reason
+            }
+        });
+    }
+
+    async terminateApp(appId: string) {
+        return this.prisma.app.update({
+            where: { id: appId },
+            data: {
+                status: 'terminated',
+                // @ts-ignore
+                rejectionReason: "Terminated by Administrator due to Policy Violation."
             }
         });
     }

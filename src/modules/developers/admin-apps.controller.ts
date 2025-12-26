@@ -29,4 +29,9 @@ export class AdminAppsController {
     async rejectApp(@Param('id') id: string, @Body() body: { reason: string }) {
         return this.developersService.rejectApp(id, body.reason);
     }
+
+    @Post(':id/terminate')
+    async terminateApp(@Param('id') id: string) {
+        return this.developersService.terminateApp(id);
+    }
 }
