@@ -249,10 +249,30 @@ model Developer {
   avatarUrl   String?
   visibility  String  @default("public") // "public" or "private"
 
+  apps        App[]
+
   // Notification Preferences
   deploymentStatus Boolean @default(true)
   payoutUpdates    Boolean @default(true)
   marketingEmails  Boolean @default(false)
+
+  // Banking & Payouts
+  bankName        String?
+  accountHolder   String?
+  accountNumber   String? // In a real app, this should be encrypted
+  ifsc            String?
+
+  // Tax & Billing
+  gstin           String?
+  pan             String?
+  panCardUrl      String? // URL to the uploaded PAN card image
+  billingAddress  String?
+  taxVerified     Boolean @default(false)
+
+  // Payout Schedule
+  payoutScheduleType String @default("automatic")
+  payoutCycle        String @default("monthly")
+  payoutDay          Int    @default(1)
 }
 
 model DeveloperPaymentOrder {
@@ -275,6 +295,52 @@ model DeveloperApiKey {
   prefix      String    // Store first few chars for display
   keyHash     String    // Securely stored hash
   status      String    @default("active") // "active" | "disabled"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([developerId])
+}
+
+model App {
+  id          String    @id @default(cuid())
+  developerId String
+  developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  name        String
+  status      String    @default("draft") // draft, review, live
+  color       String    @default("bg-white")
+  users       Int       @default(0)
+  
+  // Metadata
+  version          String?
+  category         String?
+  customCategory   String?
+  tags             String[]
+  platforms        String[]
+  shortDescription String?
+  fullDescription  String?
+  website          String?
+  supportEmail     String?
+  
+  // Pricing
+  pricingModel     String?   @default("free") // free, paid, sub
+  price            Float?    @default(0)
+  
+  // Distribution
+  distributionMode    String?   @default("global") // global, manual
+  distributionRegions String[]
+
+  // Assets
+  bannerUrl       String?
+  videoUrl        String?
+  icons           Json?     // { "512": "...", "144": ... }
+  screenshots     String[]
+  
+  // Build & Verification
+  verifyKey       String?
+  buildUrl        String?
+  buildSize       Int?
+  rejectionReason String?
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

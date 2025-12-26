@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Body, Req, UseGuards, Param, Post } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Req, UseGuards, Param, Post, Delete, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { DevelopersService } from './developers.service';
 import { UpdateProfileDto, UpdateNotificationsDto, DeleteAccountDto } from './dto/settings.dto';
@@ -12,6 +13,13 @@ export class SettingsController {
     @Get('profile')
     async getProfile(@Req() req: any) {
         return this.developersService.getProfile(req.user.id);
+    }
+
+    @Patch('profile/avatar')
+    @UseInterceptors(FileInterceptor('file'))
+    async updateAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+        if (!file) throw new BadRequestException('File is required');
+        return this.developersService.uploadAvatar(req.user.id, file);
     }
 
     @Patch('profile')
@@ -28,6 +36,16 @@ export class SettingsController {
     @Patch('api-keys/:keyId/roll')
     async rollApiKey(@Req() req: any, @Param('keyId') keyId: string) {
         return this.developersService.rollApiKey(req.user.id, keyId);
+    }
+
+    @Post('api-keys')
+    async createApiKey(@Req() req: any, @Body() body: { type: string }) {
+        return this.developersService.createApiKey(req.user.id, body.type || 'production');
+    }
+
+    @Delete('api-keys/:keyId')
+    async deleteApiKey(@Req() req: any, @Param('keyId') keyId: string) {
+        return this.developersService.deleteApiKey(req.user.id, keyId);
     }
 
     // Helper to create key if none exist (frontend logic might need this, or handled elsewhere. User didn't request explicit CREATE endpoint but implied it by listing multiple keys or rolling. Usually a "Create new key" button exists. I'll add POST /api-keys/create to be complete or stick to req.)
