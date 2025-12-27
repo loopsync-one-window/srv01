@@ -11,9 +11,18 @@ import { PlansModule } from '../plans/plans.module';
 import { AuthModule } from '../auth/auth.module';
 import { EmailModule } from '../email/email.module';
 import { DevelopersModule } from '../developers/developers.module';
+import { AdminAuthModule } from './auth/admin-auth.module';
 
 @Module({
-  imports: [UsersModule, BillingModule, PlansModule, AuthModule, EmailModule, DevelopersModule],
+  imports: [
+    UsersModule,
+    BillingModule,
+    PlansModule,
+    AuthModule,
+    EmailModule,
+    DevelopersModule,
+    AdminAuthModule,
+  ],
   controllers: [AdminController],
   providers: [
     PrismaService,

@@ -33,7 +33,10 @@ export class BillingController {
     } else if (body.subscriptionId) {
       return this.billingService.getSubscriptionDetails(body.subscriptionId);
     }
-    return { success: false, error: 'Either paymentId or subscriptionId is required' };
+    return {
+      success: false,
+      error: 'Either paymentId or subscriptionId is required',
+    };
   }
 
   private async getUserEmail(userId: string) {

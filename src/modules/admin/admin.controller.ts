@@ -1,5 +1,13 @@
-import { Controller, Get, Param, UseGuards, Post, Body, Delete } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Post,
+  Body,
+  Delete,
+} from '@nestjs/common';
+import { AdminAuthGuard } from './auth/admin-auth.guard';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
 import { FeaturesService } from '../features/features.service';
@@ -21,31 +29,31 @@ export class AdminController {
     private readonly developersService: DevelopersService,
   ) { }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('users')
   async getAllUsers() {
     return this.usersService.findAll();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('users/:id')
   async getUser(@Param('id') id: string) {
     return this.usersService.findOneById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('subscribed-users')
   async getAllSubscribedUsers() {
     return this.subscriptionsService.getAllSubscribedUsers();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('active-subscribers')
   async getActiveSubscribersDetailed() {
     return this.subscriptionsService.getActiveSubscribersDetailed();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Post('notify-all')
   async notifyAll(@Body() body: any) {
     const { title, description } = body || {};
@@ -73,7 +81,7 @@ export class AdminController {
     return { success: true, sent, total: users.length };
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Post('notify-user')
   async notifyUser(@Body() body: any) {
     const { userId, title, description } = body || {};
@@ -101,32 +109,32 @@ export class AdminController {
     return { success: true };
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Delete('users/:id')
   async deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUserDirectly(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Post('users/bulk-delete')
   async deleteUsersBulk(@Body() body: { ids: string[] }) {
     return this.usersService.deleteUsersBulk(body.ids);
   }
 
   // Developer Admin APIs
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('developers')
   async getAllDevelopers() {
     return this.developersService.findAll();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Get('developers/:id')
   async getDeveloper(@Param('id') id: string) {
     return this.developersService.findOneById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Delete('developers/:id')
   async deleteDeveloper(@Param('id') id: string) {
     return this.developersService.delete(id);

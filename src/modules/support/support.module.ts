@@ -3,7 +3,7 @@ import { SupportController } from './support.controller';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-    imports: [EmailModule],
-    controllers: [SupportController],
+  imports: [EmailModule],
+  controllers: [SupportController],
 })
-export class SupportModule { }
+export class SupportModule {}

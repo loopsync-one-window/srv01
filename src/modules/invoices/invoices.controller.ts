@@ -104,10 +104,7 @@ export class InvoicesController {
     @Req() req: any,
     @Param('invoiceNumber') invoiceNumber: string,
   ) {
-    return this.invoicesService.getByInvoiceNumber(
-      invoiceNumber,
-      req.user.id,
-    );
+    return this.invoicesService.getByInvoiceNumber(invoiceNumber, req.user.id);
   }
 
   // =========================
@@ -196,11 +193,7 @@ export class InvoicesController {
   // =========================
   // PDF HELPER (REUSED)
   // =========================
-  private streamInvoicePdf(
-    res: Response,
-    invoiceNumber: string,
-    invoice: any,
-  ) {
+  private streamInvoicePdf(res: Response, invoiceNumber: string, invoice: any) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',

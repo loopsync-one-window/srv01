@@ -29,7 +29,7 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup-email')
   async signupEmail(@Body() dto: SignupEmailDto) {
@@ -255,7 +255,9 @@ export class AuthController {
       userData: JSON.stringify(tokens.user),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresAt: tokens.expiresAt ? new Date(tokens.expiresAt).toISOString() : '',
+      expiresAt: tokens.expiresAt
+        ? new Date(tokens.expiresAt).toISOString()
+        : '',
     });
 
     if (user.accountType === 'VISITOR') {

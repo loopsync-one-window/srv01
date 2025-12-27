@@ -16,7 +16,7 @@ export interface AcquisitionInquiryDto {
 
 @Injectable()
 export class AcquireService {
-  constructor(private readonly emailService: EmailService) { }
+  constructor(private readonly emailService: EmailService) {}
 
   async handleInquiry(data: AcquisitionInquiryDto) {
     const { name, email } = data;
@@ -76,6 +76,10 @@ export class AcquireService {
       </div>
     `;
 
-    await this.emailService.sendMail('acquire@loopsync.cloud', `New Acquisition Inquiry: ${data.name}`, internalHtml);
+    await this.emailService.sendMail(
+      'acquire@loopsync.cloud',
+      `New Acquisition Inquiry: ${data.name}`,
+      internalHtml,
+    );
   }
 }

@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { DevelopersController } from './developers.controller';
 import { AuthV1Controller } from './auth-v1.controller';
@@ -18,9 +17,19 @@ import { AppsController } from './apps.controller';
 import { AdminAppsController } from './admin-apps.controller';
 
 @Module({
-    imports: [PrismaModule, ConfigModule, AuthModule],
-    controllers: [DevelopersController, AuthV1Controller, SettingsController, BankingController, RevenueController, AnalyticsController, OverviewController, AppsController, AdminAppsController],
-    providers: [DevelopersService],
-    exports: [DevelopersService],
+  imports: [PrismaModule, ConfigModule, AuthModule],
+  controllers: [
+    DevelopersController,
+    AuthV1Controller,
+    SettingsController,
+    BankingController,
+    RevenueController,
+    AnalyticsController,
+    OverviewController,
+    AppsController,
+    AdminAppsController,
+  ],
+  providers: [DevelopersService],
+  exports: [DevelopersService],
 })
-export class DevelopersModule { }
+export class DevelopersModule {}

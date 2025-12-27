@@ -13,7 +13,7 @@ export class SubscriptionsService {
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
-  ) { }
+  ) {}
 
   // Expose prisma for other services to use
   getPrisma() {
@@ -139,7 +139,9 @@ export class SubscriptionsService {
     // Sync from provider if possible
     if (subscription.providerSubscriptionId) {
       try {
-        const rzpSub = await this.billingService.getRazorpay().subscriptions.fetch(subscription.providerSubscriptionId);
+        const rzpSub = await this.billingService
+          .getRazorpay()
+          .subscriptions.fetch(subscription.providerSubscriptionId);
         // We can check if status changed or if there are new payment details
         // Note: Razorpay subscription object has 'short_url', 'status', 'current_start', etc.
         // It might NOT have the latest invoice/payment ID directly on it unless we fetch invoices.
@@ -157,23 +159,28 @@ export class SubscriptionsService {
     // Our 'computeIsFreeTrial' method already does a live check on the payment ID if it exists.
     // If we want to FIND the payment ID if it's missing (e.g. initial webhook missed), we could try to find it via invoices.
 
-    if (subscription.providerSubscriptionId && !subscription.providerPaymentId) {
+    if (
+      subscription.providerSubscriptionId &&
+      !subscription.providerPaymentId
+    ) {
       try {
         const invoices = await this.billingService.getRazorpay().invoices.all({
-          subscription_id: subscription.providerSubscriptionId
+          subscription_id: subscription.providerSubscriptionId,
         });
         // Look for a paid invoice
-        const paidInvoice = invoices.items.find((inv: any) => inv.status === 'paid');
+        const paidInvoice = invoices.items.find(
+          (inv: any) => inv.status === 'paid',
+        );
         if (paidInvoice && paidInvoice.payment_id) {
           // Update local record
           await this.prisma.subscription.update({
             where: { id: subscription.id },
-            data: { providerPaymentId: paidInvoice.payment_id }
+            data: { providerPaymentId: paidInvoice.payment_id },
           });
           // Update the in-memory object so logic below uses it
           subscription.providerPaymentId = paidInvoice.payment_id;
         }
-      } catch (e) { }
+      } catch (e) {}
     }
 
     const isFreeTrial = await this.computeIsFreeTrial(subscription);
@@ -228,10 +235,10 @@ export class SubscriptionsService {
         isFreeTrial,
         paymentMethod: defaultPaymentMethod
           ? {
-            id: defaultPaymentMethod.id,
-            type: defaultPaymentMethod.type,
-            providerDetails: defaultPaymentMethod.providerDetails,
-          }
+              id: defaultPaymentMethod.id,
+              type: defaultPaymentMethod.type,
+              providerDetails: defaultPaymentMethod.providerDetails,
+            }
           : null,
       },
     };
@@ -474,8 +481,8 @@ export class SubscriptionsService {
       let resolvedPlanCode: string | undefined = planCode;
       let plan = resolvedPlanCode
         ? await this.prisma.plan.findUnique({
-          where: { code: resolvedPlanCode },
-        })
+            where: { code: resolvedPlanCode },
+          })
         : null;
 
       // Validate autopay payment amount and resolve plan if missing
@@ -498,8 +505,8 @@ export class SubscriptionsService {
         }
         plan = resolvedPlanCode
           ? await this.prisma.plan.findUnique({
-            where: { code: resolvedPlanCode },
-          })
+              where: { code: resolvedPlanCode },
+            })
           : null;
       }
       if (!plan) {
@@ -565,7 +572,7 @@ export class SubscriptionsService {
         if (actualPaymentId !== subscriptionId) {
           existingSubscription = await this.prisma.subscription.update({
             where: { id: existingSubscription.id },
-            data: { providerPaymentId: actualPaymentId }
+            data: { providerPaymentId: actualPaymentId },
           });
         }
 
@@ -575,7 +582,8 @@ export class SubscriptionsService {
         );
       } else {
         // Update existing subscription if needed
-        const actualPaymentId = paymentData?.id || existingSubscription.providerPaymentId;
+        const actualPaymentId =
+          paymentData?.id || existingSubscription.providerPaymentId;
 
         existingSubscription = await this.prisma.subscription.update({
           where: { id: existingSubscription.id },
@@ -685,9 +693,14 @@ export class SubscriptionsService {
       if (!planCode || planCode !== 'PRO') return false;
 
       // Enhanced Check: Verify subscription details for paid status
-      if (subscription?.providerSubscriptionId && subscription.providerSubscriptionId.startsWith('sub_')) {
+      if (
+        subscription?.providerSubscriptionId &&
+        subscription.providerSubscriptionId.startsWith('sub_')
+      ) {
         try {
-          const rzpSub = await this.billingService.getRazorpay().subscriptions.fetch(subscription.providerSubscriptionId);
+          const rzpSub = await this.billingService
+            .getRazorpay()
+            .subscriptions.fetch(subscription.providerSubscriptionId);
           // If paid_count is > 0, it means at least one charge went through.
           // NOTE: for free trials, usually there is an auth charge but paid_count might settle.
           // However, Razorpay 'trial' attribute is definitive.
@@ -698,18 +711,31 @@ export class SubscriptionsService {
             return false;
           }
         } catch (e) {
-          console.warn('Failed to verify subscription status with Razorpay in computeIsFreeTrial', e);
+          console.warn(
+            'Failed to verify subscription status with Razorpay in computeIsFreeTrial',
+            e,
+          );
         }
       }
 
       // Existing check for direct payment ID (backward compatibility)
-      if (subscription?.providerPaymentId && subscription.providerPaymentId.startsWith('pay_')) {
+      if (
+        subscription?.providerPaymentId &&
+        subscription.providerPaymentId.startsWith('pay_')
+      ) {
         try {
-          const payment = await this.billingService.getRazorpay().payments.fetch(subscription.providerPaymentId);
-          if (payment && payment.status === 'captured' && (payment.amount && Number(payment.amount) > 500)) {
+          const payment = await this.billingService
+            .getRazorpay()
+            .payments.fetch(subscription.providerPaymentId);
+          if (
+            payment &&
+            payment.status === 'captured' &&
+            payment.amount &&
+            Number(payment.amount) > 500
+          ) {
             return false;
           }
-        } catch (e) { }
+        } catch (e) {}
       }
 
       const userEmail = subscription?.user?.email;
@@ -1105,7 +1131,7 @@ export class SubscriptionsService {
       if (email) {
         try {
           await this.markEmailAsUsed(email);
-        } catch { }
+        } catch {}
       }
       return { success: true, message: 'Authorization acknowledged' };
     } catch (error) {
@@ -1264,8 +1290,8 @@ export class SubscriptionsService {
     const providerStatus = provider?.provider?.status;
     const isAutopayCancelled = providerStatus
       ? providerStatus.toLowerCase() === 'cancelled' ||
-      providerStatus.toLowerCase() === 'halted' ||
-      providerStatus.toLowerCase() === 'paused'
+        providerStatus.toLowerCase() === 'halted' ||
+        providerStatus.toLowerCase() === 'paused'
       : false;
 
     const isFreeTrial = await this.computeIsFreeTrial(subscription);

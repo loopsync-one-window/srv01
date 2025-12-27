@@ -351,3 +351,15 @@ model App {
 
   @@index([developerId])
 }
+
+model Admin {
+  id               String   @id @default(cuid())
+  fullName         String
+  email            String   @unique
+  passwordHash     String
+  role             String   @default("ADMIN")
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+

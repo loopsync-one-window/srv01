@@ -12,7 +12,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
-  ) { }
+  ) {}
 
   async findOneByEmail(email: string) {
     const user = await this.prisma.user.findUnique({

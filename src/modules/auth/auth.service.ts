@@ -10,7 +10,12 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from '../email/email.service';
-import { AuthProvider, UserStatus, AccountType, DeveloperStatus } from '.prisma/client';
+import {
+  AuthProvider,
+  UserStatus,
+  AccountType,
+  DeveloperStatus,
+} from '.prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -288,7 +293,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch { }
+      } catch {}
     }
     if (!userId && accessToken) {
       try {
@@ -297,7 +302,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch { }
+      } catch {}
     }
     if (!userId) {
       return { message: 'No valid token provided' };
@@ -524,18 +529,22 @@ export class AuthService {
       data: { passwordHash: hashedPassword },
     });
 
-
     return { message: 'Password reset successfully' };
   }
 
   async validateDeveloper(email: string, password: string): Promise<any> {
-    const developer = await this.prisma.developer.findUnique({ where: { email } });
+    const developer = await this.prisma.developer.findUnique({
+      where: { email },
+    });
 
     if (!developer || !developer.passwordHash) {
       return null;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, developer.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      developer.passwordHash,
+    );
 
     if (!isPasswordValid) {
       return null;
@@ -547,7 +556,11 @@ export class AuthService {
   }
 
   async loginDeveloper(developer: any) {
-    const payload = { email: developer.email, sub: developer.id, role: 'DEVELOPER' };
+    const payload = {
+      email: developer.email,
+      sub: developer.id,
+      role: 'DEVELOPER',
+    };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.secret'),

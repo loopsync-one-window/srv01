@@ -50,4 +50,4 @@ import { DevelopersModule } from './modules/developers/developers.module';
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}
