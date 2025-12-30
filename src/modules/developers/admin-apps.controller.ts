@@ -13,7 +13,7 @@ import { DevelopersService } from './developers.service';
 @Controller('admin/apps')
 @UseGuards(AuthGuard('jwt')) // Ideally add Admin Role Guard here
 export class AdminAppsController {
-  constructor(private readonly developersService: DevelopersService) {}
+  constructor(private readonly developersService: DevelopersService) { }
 
   @Get('review')
   async getAppsForReview() {

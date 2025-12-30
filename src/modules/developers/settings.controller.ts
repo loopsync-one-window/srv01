@@ -24,7 +24,7 @@ import {
 @Controller('api/v1/settings')
 @UseGuards(AuthGuard('jwt'))
 export class SettingsController {
-  constructor(private readonly developersService: DevelopersService) {}
+  constructor(private readonly developersService: DevelopersService) { }
 
   // 1️⃣ Profile & Visibility
   @Get('profile')

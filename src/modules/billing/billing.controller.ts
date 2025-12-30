@@ -13,6 +13,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AdminAuthGuard } from '../admin/auth/admin-auth.guard';
 
 @ApiTags('billing')
 @Controller('billing')
@@ -166,7 +167,7 @@ export class BillingController {
     return this.billingService.getTrialCreditsStatus(userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AdminAuthGuard)
   @Post('admin/user-details')
   async getAdminUserDetails(@Body() body: any) {
     const { email } = body || {};

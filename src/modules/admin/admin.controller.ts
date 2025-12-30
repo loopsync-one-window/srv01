@@ -6,7 +6,11 @@ import {
   Post,
   Body,
   Delete,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminAuthGuard } from './auth/admin-auth.guard';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
@@ -15,6 +19,7 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EmailService } from '../email/email.service';
 import { DevelopersService } from '../developers/developers.service';
+import { AppsService } from '../store/apps/app.service';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -27,7 +32,28 @@ export class AdminController {
     private readonly subscriptionsService: SubscriptionsService,
     private readonly emailService: EmailService,
     private readonly developersService: DevelopersService,
+    private readonly appsService: AppsService,
   ) { }
+
+  // ... (existing methods) ...
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/upload-build')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAdminBuild(
+    @Param('id') id: string,
+    @Body() body: { version: string; platform: string },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+    return this.developersService.uploadBuild(
+      id,
+      body.version || '1.0.0',
+      body.platform || 'windows',
+      file,
+    );
+  }
+
 
   @UseGuards(AdminAuthGuard)
   @Get('users')
@@ -138,5 +164,77 @@ export class AdminController {
   @Delete('developers/:id')
   async deleteDeveloper(@Param('id') id: string) {
     return this.developersService.delete(id);
+  }
+  // App Review APIs
+  @UseGuards(AdminAuthGuard)
+  @Get('apps/all')
+  async getAllAppsForAdmin() {
+    return this.developersService.getAllAppsForAdmin();
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('apps/review')
+  async getAppsForReview() {
+    return this.developersService.getAppsForReview();
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('apps/:id')
+  async getAppDetails(@Param('id') id: string) {
+    return this.developersService.getAppDetailsForAdmin(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/approve')
+  async approveApp(@Param('id') id: string) {
+    return this.developersService.approveApp(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/reject')
+  async rejectApp(@Param('id') id: string, @Body() body: { reason: string }) {
+    return this.developersService.rejectApp(id, body.reason);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/terminate')
+  async terminateApp(@Param('id') id: string) {
+    return this.developersService.terminateApp(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/reopen')
+  async reopenApp(@Param('id') id: string) {
+    return this.developersService.reopenApp(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('apps/:id/publish')
+  async publishApp(@Param('id') id: string, @Body() body: any) {
+    return this.developersService.publishApp(id, body);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('apps/:id/history')
+  async getAppHistory(@Param('id') id: string) {
+    return this.developersService.getAppHistory(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('flags')
+  async getFlaggedApps() {
+    return this.appsService.getReports();
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('purchases')
+  async getAllPurchases() {
+    return this.developersService.getAllPurchases();
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('contributions')
+  async getAllContributions() {
+    return this.developersService.getAllContributions();
   }
 }

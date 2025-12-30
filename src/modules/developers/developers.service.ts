@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { RegisterDeveloperDto } from './dto/register-developer.dto';
 import { CreatePaymentOrderDto } from './dto/create-payment-order.dto';
@@ -218,6 +218,62 @@ export class DevelopersService {
     return this.prisma.developer.delete({
       where: { id },
     });
+  }
+
+  async getAllPurchases() {
+    const purchases = await this.prisma.invoice.findMany({
+      where: { status: 'PAID' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Populate App Names manually
+    const enrichedPurchases = [];
+    for (const purchase of purchases) {
+      let appName = 'Unknown App';
+      if (purchase.paymentReferenceId) {
+        const app = await this.prisma.app.findUnique({
+          where: { id: purchase.paymentReferenceId },
+          select: { name: true }
+        });
+        if (app) appName = app.name;
+      }
+      enrichedPurchases.push({
+        ...purchase,
+        appName
+      });
+    }
+    return enrichedPurchases;
+  }
+
+  async getAllContributions() {
+    const invoices = await this.prisma.invoice.findMany({
+      where: { type: 'CONTRIBUTION' },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Populate App Names
+    const enriched = [];
+    for (const inv of invoices) {
+      let appName = 'Unknown App';
+      let appIcon = null;
+      if (inv.paymentReferenceId) {
+        const app = await this.prisma.app.findUnique({
+          where: { id: inv.paymentReferenceId },
+          select: { name: true, icons: true },
+        });
+        if (app) {
+          appName = app.name;
+          appIcon = app.icons;
+        }
+      }
+      enriched.push({
+        ...inv,
+        appName,
+        appIcon,
+      });
+    }
+    return enriched;
   }
 
   // Settings Methods
@@ -563,72 +619,185 @@ export class DevelopersService {
     };
   }
   async getRevenueSummary(developerId: string) {
-    // Mock data as per requirements (real implementation would query DB)
+    // 1. Get developer's apps
+    const apps = await this.prisma.app.findMany({
+      where: { developerId },
+      select: { id: true },
+    });
+    const appIds = apps.map((a) => a.id);
+
+    if (appIds.length === 0) {
+      return {
+        totalEarnings: 0,
+        currency: 'INR',
+        monthlyGrowthPercent: 0,
+        nextPayout: {
+          amount: 0,
+          currency: 'INR',
+          status: 'pending',
+          scheduledFor: new Date().toISOString().split('T')[0],
+        },
+      };
+    }
+
+    // 2. Fetch all paid invoices for these apps (REVENUE)
+    const allInvoices = await this.prisma.invoice.findMany({
+      where: {
+        paymentReferenceId: { in: appIds },
+        status: 'PAID',
+      },
+      select: { amount: true, createdAt: true },
+    });
+
+    // 3. Calculate Total Revenue (platform wide)
+    const totalRevenue = allInvoices.reduce((acc, inv) => acc + inv.amount, 0);
+
+    // 4. Developer Share (80%)
+    const developerShare = totalRevenue * 0.8;
+
+    // 5. Calculate Monthly Growth
+    const now = new Date();
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const currentMonthRevenue = allInvoices
+      .filter((inv) => inv.createdAt >= startOfCurrentMonth)
+      .reduce((acc, inv) => acc + inv.amount, 0);
+
+    const lastMonthRevenue = allInvoices
+      .filter(
+        (inv) =>
+          inv.createdAt >= startOfLastMonth && inv.createdAt <= endOfLastMonth,
+      )
+      .reduce((acc, inv) => acc + inv.amount, 0);
+
+    let growthPercent = 0;
+    if (lastMonthRevenue > 0) {
+      growthPercent =
+        ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+    } else if (currentMonthRevenue > 0) {
+      growthPercent = 100;
+    }
+
+    // Calculate next payout date (1st of next month)
+    const nextPayoutDate = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+    ).toISOString().split('T')[0];
+
     return {
-      totalEarnings: 14290.8,
+      totalEarnings: totalRevenue, // Exhibit A: Total Gross Revenue
       currency: 'INR',
-      monthlyGrowthPercent: 15.3,
+      monthlyGrowthPercent: parseFloat(growthPercent.toFixed(1)),
       nextPayout: {
-        amount: 2450.0,
+        amount: developerShare, // Exhibit B: Net Payout (80%)
         currency: 'INR',
         status: 'pending',
-        scheduledFor: '2026-01-01',
+        scheduledFor: nextPayoutDate,
       },
     };
   }
 
-  async getRevenueTransactions(developerId: string, limit: number) {
-    // Mock data matching the requested structure
+  async getRevenueTransactions(
+    developerId: string,
+    limit: number,
+    page: number = 1,
+  ) {
+    const apps = await this.prisma.app.findMany({
+      where: { developerId },
+      select: { id: true, name: true },
+    });
+    const appIds = apps.map((a) => a.id);
+    const appMap = new Map(apps.map((a) => [a.id, a.name]));
+
+    const where = {
+      paymentReferenceId: { in: appIds },
+      status: { in: ['PAID', 'PENDING'] as any },
+    };
+
+    const total = await this.prisma.invoice.count({ where });
+
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+
     return {
-      items: [
-        {
-          id: 'txn_8821',
-          date: '2025-12-20',
-          description: 'Payout #8821',
-          status: 'completed',
-          amount: 3100.0,
-          currency: 'INR',
-        },
-        {
-          id: 'txn_7732',
-          date: '2025-11-20',
-          description: 'Payout #7732',
-          status: 'completed',
-          amount: 2950.0,
-          currency: 'INR',
-        },
-      ],
+      items: invoices.map((inv) => ({
+        id: inv.id,
+        date: inv.createdAt.toISOString().split('T')[0],
+        description: `Purchase: ${appMap.get(inv.paymentReferenceId || '') || 'Unknown App'}`,
+        status: inv.status.toLowerCase(),
+        amount: inv.amount, // Full amount paid by user
+        currency: inv.currency,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
   async exportRevenueReport(
     developerId: string,
     format: string,
-    period: string,
+    period: string, // Currently unused, defaults to all history
   ) {
-    // Generate CSV content
-    if (format === 'csv') {
-      const header = 'Date,Description,Status,Amount,Currency\n';
-      const row1 = '2025-12-20,Payout #8821,completed,3100.00,INR\n';
-      const row2 = '2025-11-20,Payout #7732,completed,2950.00,INR\n';
-      return header + row1 + row2;
-    }
-    return 'Unsupported format';
+    if (format !== 'csv') return 'Unsupported format';
+
+    const apps = await this.prisma.app.findMany({
+      where: { developerId },
+      select: { id: true, name: true },
+    });
+    const appIds = apps.map((a) => a.id);
+    const appMap = new Map(apps.map((a) => [a.id, a.name]));
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        paymentReferenceId: { in: appIds },
+        status: 'PAID',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const header = 'Date,Description,Status,Amount,Currency\n';
+    const rows = invoices.map((inv) => {
+      const date = inv.createdAt.toISOString().split('T')[0];
+      const desc = `Purchase: ${appMap.get(inv.paymentReferenceId || '') || 'Unknown App'}`;
+      const status = inv.status;
+      const amount = inv.amount.toFixed(2);
+      const currency = inv.currency;
+      return `${date},${desc},${status},${amount},${currency}`;
+    });
+
+    return header + rows.join('\n');
   }
 
   async getAnalyticsOverview(
     developerId: string,
     range: string,
     region: string,
+    appId?: string,
   ) {
-    // Mock data tailored to range/region if needed (static for now)
+    const agg = await this.prisma.app.aggregate({
+      where: { developerId, ...(appId && { id: appId }) },
+      _sum: { users: true },
+    });
+    const totalUsers = agg._sum.users || 0;
+
+    // Heuristics for non-tracked metrics based on real user count
+    const activeSessions = Math.round(totalUsers * 0.08) + 12; // ~8% active + baseline
+
     return {
-      totalUsers: 12543,
-      totalUsersChangePercent: 12,
-      activeSessions: 842,
-      activeSessionsChangePercent: 5,
-      avgSessionDurationSec: 272,
-      avgSessionDurationChangePercent: 8,
+      totalUsers: totalUsers,
+      totalUsersChangePercent: 4, // Placeholder for historical diff
+      activeSessions: activeSessions,
+      activeSessionsChangePercent: 2,
+      avgSessionDurationSec: 245,
+      avgSessionDurationChangePercent: 1.2,
     };
   }
 
@@ -636,27 +805,38 @@ export class DevelopersService {
     developerId: string,
     range: string,
     region: string,
+    appId?: string,
   ) {
-    // Mock daily traffic data
-    return {
-      points: [
-        { label: 'Mon', users: 4000 },
-        { label: 'Tue', users: 3000 },
-        { label: 'Wed', users: 2000 },
-        { label: 'Thu', users: 2780 },
-        { label: 'Fri', users: 1890 },
-        { label: 'Sat', users: 2390 },
-        { label: 'Sun', users: 3490 },
-      ],
-    };
+    // Generate realistic traffic curve based on total users
+    // This distributes the "Total Users" somewhat realistically over the last 7 points
+    // Note: This is a simulation since we don't not have daily analytics rows in DB
+    const agg = await this.prisma.app.aggregate({
+      where: { developerId, ...(appId && { id: appId }) },
+      _sum: { users: true },
+    });
+    const totalUsers = agg._sum.users || 0;
+
+    // Create a 7-day trend
+    const base = totalUsers / 20; // Daily generic baseline
+    const points = [];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    for (const day of days) {
+      // Random variance +/- 20%
+      const daily = Math.round(base * (0.8 + Math.random() * 0.4));
+      points.push({ label: day, users: daily });
+    }
+
+    return { points };
   }
 
   async getAnalyticsDevices(
     developerId: string,
     range: string,
     region: string,
+    appId?: string,
   ) {
-    // Mock device breakdown
+    // Static distribution as we don't track User-Agent in current schema
     return {
       devices: [
         { type: 'Desktop', percentage: 65 },
@@ -666,12 +846,20 @@ export class DevelopersService {
     };
   }
 
-  async getAnalyticsRealtime(developerId: string) {
-    // Mock live snapshot
+  async getAnalyticsRealtime(developerId: string, appId?: string) {
+    const agg = await this.prisma.app.aggregate({
+      where: { developerId, ...(appId && { id: appId }) },
+      _sum: { users: true },
+    });
+    const totalUsers = agg._sum.users || 0;
+
+    // Simulate ~1-3% of users being "live" right now
+    const activeUsers = Math.max(1, Math.round(totalUsers * (0.01 + Math.random() * 0.02)));
+
     return {
-      activeUsers: Math.floor(Math.random() * 50) + 100, // random variation
-      activeSessions: Math.floor(Math.random() * 30) + 80,
-      requestsPerMinute: Math.floor(Math.random() * 100) + 300,
+      activeUsers: activeUsers,
+      activeSessions: Math.round(activeUsers * 0.8),
+      requestsPerMinute: activeUsers * 4 + Math.floor(Math.random() * 50),
     };
   }
 
@@ -734,10 +922,19 @@ export class DevelopersService {
     // Filter activity based on search if needed, but typically search is for apps.
     // We will return all activity for now or could filter by app name.
 
+    // Check for missing requirements
+    const missingRequirements: string[] = [];
+    if (!dev.bio) missingRequirements.push('Add a bio to your profile');
+    if (!dev.avatarUrl) missingRequirements.push('Upload a profile picture');
+    if (!dev.pan) missingRequirements.push('Add your Permanent Account Number (PAN)');
+    if (!dev.panCardUrl) missingRequirements.push('Upload your PAN Card copy');
+    if (!dev.billingAddress) missingRequirements.push('Add your billing address');
+
     return {
       context: {
         displayName: dev.fullName.split(' ')[0], // First name
         timeOfDay: timeOfDay,
+        missingRequirements,
       },
       apps: apps,
       activity: activity,
@@ -940,6 +1137,21 @@ export class DevelopersService {
   }
 
   // Admin Review Methods
+  async getAllAppsForAdmin() {
+    return this.prisma.app.findMany({
+      include: {
+        developer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
   async getAppsForReview() {
     return this.prisma.app.findMany({
       where: { status: 'review' },
@@ -968,6 +1180,8 @@ export class DevelopersService {
             avatarUrl: true,
           },
         },
+        // @ts-ignore
+        currentBuild: true,
       },
     });
   }
@@ -990,6 +1204,35 @@ export class DevelopersService {
         status: 'rejected',
         // @ts-ignore
         rejectionReason: reason,
+        history: {
+          create: {
+            action: 'REJECTED',
+            reason: reason,
+          },
+        },
+      },
+    });
+  }
+
+  async getAppHistory(appId: string) {
+    return this.prisma.appHistory.findMany({
+      where: { appId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+
+  async reopenApp(appId: string) {
+    return this.prisma.app.update({
+      where: { id: appId },
+      data: {
+        status: 'review',
+        history: {
+          create: {
+            action: 'REOPENED',
+            reason: 'Reopened by admin',
+          },
+        },
       },
     });
   }
@@ -999,9 +1242,155 @@ export class DevelopersService {
       where: { id: appId },
       data: {
         status: 'terminated',
+        history: {
+          create: {
+            action: 'TERMINATED',
+            reason: 'Terminated by admin',
+          },
+        },
         // @ts-ignore
         rejectionReason: 'Terminated by Administrator due to Policy Violation.',
       },
     });
+  }
+
+  async publishApp(appId: string, buildDetails?: any) {
+    // Guaranteed publish flow
+    const now = new Date();
+    const prisma = this.prisma as any;
+
+    let currentBuildId = null;
+
+    // 1. If buildDetails provided, create/register new build
+    if (buildDetails && buildDetails.platform && buildDetails.buildId) {
+      // Create new build record (implied "Register Build" action)
+      const newBuild = await prisma.build.create({
+        data: {
+          appId,
+          version: buildDetails.version || '1.0.0', // Default if not provided
+          status: 'approved',
+          isActive: true,
+          platforms: {
+            [buildDetails.platform]: {
+              buildId: buildDetails.buildId,
+              sizeMB: buildDetails.sizeMB || 0,
+              path: buildDetails.path, // Store full path if needed for reference
+            }
+          }
+        }
+      });
+      currentBuildId = newBuild.id;
+
+      // Deactivate other builds
+      await prisma.build.updateMany({
+        where: { appId, id: { not: newBuild.id } },
+        data: { isActive: false },
+      });
+
+    } else {
+      // Fallback: Find latest build if no details provided
+      const latestBuild = await prisma.build.findFirst({
+        where: { appId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (latestBuild) {
+        await prisma.build.update({
+          where: { id: latestBuild.id },
+          data: {
+            status: 'approved',
+            isActive: true,
+          },
+        });
+        await prisma.build.updateMany({
+          where: { appId, id: { not: latestBuild.id } },
+          data: { isActive: false },
+        });
+        currentBuildId = latestBuild.id;
+      }
+    }
+
+    // 3. Update App
+    return this.prisma.app.update({
+      where: { id: appId },
+      data: {
+        ...(buildDetails?.color ? { color: buildDetails.color } : {}), // Update color if provided
+        ...(buildDetails?.privacyTracking ? { privacyTracking: buildDetails.privacyTracking } : {}),
+        ...(buildDetails?.privacyLinked ? { privacyLinked: buildDetails.privacyLinked } : {}),
+        ...(buildDetails?.ageRating ? { ageRating: buildDetails.ageRating } : {}),
+        ...(buildDetails?.copyright ? { copyright: buildDetails.copyright } : {}),
+        ...(buildDetails?.website ? { website: buildDetails.website } : {}), // Optional override
+        ...(buildDetails?.supportEmail ? { supportEmail: buildDetails.supportEmail } : {}), // Optional override
+        status: 'live', // Published
+        // @ts-ignore
+        publishedAt: now,
+        // @ts-ignore
+        currentBuildId: currentBuildId,
+        history: {
+          create: {
+            action: 'PUBLISHED',
+            reason: 'Approved and published by admin',
+          },
+        },
+      },
+      include: {
+        // @ts-ignore
+        currentBuild: true,
+      }
+    });
+  }
+  async uploadBuild(appId: string, version: string, platform: string, file: Express.Multer.File) {
+    console.log(`[UploadBuild] Starting upload for App: ${appId}, File: ${file.originalname}, Size: ${file.size}`);
+    const bucketName = this.configService.getOrThrow('AWS_S3_BUCKET_NAME');
+    const folderPrefix = `apps/${appId}/builds/`;
+
+    // Clean up old builds to replace with new one
+    try {
+      const listedObjects = await this.s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: bucketName,
+          Prefix: folderPrefix,
+        }),
+      );
+
+      if (listedObjects.Contents && listedObjects.Contents.length > 0) {
+        console.log(`[UploadBuild] Cleaning up ${listedObjects.Contents.length} old files`);
+        const deleteParams = {
+          Bucket: bucketName,
+          Delete: { Objects: listedObjects.Contents.map(({ Key }) => ({ Key })) },
+        };
+        await this.s3Client.send(new DeleteObjectsCommand(deleteParams));
+      } else {
+        console.log(`[UploadBuild] No old files to cleanup`);
+      }
+    } catch (e) {
+      console.warn('[UploadBuild] Failed to cleanup old builds:', e);
+    }
+
+    // Key format: apps/{appId}/builds/{filename}
+    // Matching the structure used in generateUploadUrl and required by the user
+    const key = `apps/${appId}/builds/${file.originalname}`;
+    console.log(`[UploadBuild] Uploading to Key: ${key}`);
+
+    try {
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+          Body: file.buffer,
+          // ContentType: file.mimetype, // Optional for binary
+        }),
+      );
+      console.log(`[UploadBuild] Upload success`);
+    } catch (err) {
+      console.error(`[UploadBuild] Upload failed`, err);
+      throw err;
+    }
+
+    return {
+      key,
+      url: `https://${bucketName}.s3.ap-south-1.amazonaws.com/${key}`,
+      filename: file.originalname
+    };
   }
 }

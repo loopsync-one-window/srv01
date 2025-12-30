@@ -12,6 +12,7 @@ import { AuthModule } from '../auth/auth.module';
 import { EmailModule } from '../email/email.module';
 import { DevelopersModule } from '../developers/developers.module';
 import { AdminAuthModule } from './auth/admin-auth.module';
+import { StoreModule } from '../store/store.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AdminAuthModule } from './auth/admin-auth.module';
     EmailModule,
     DevelopersModule,
     AdminAuthModule,
+    StoreModule,
   ],
   controllers: [AdminController],
   providers: [

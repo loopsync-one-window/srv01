@@ -47,6 +47,7 @@ model User {
   paymentMethods    PaymentMethod[]
   billingAddresses  BillingAddress[]
   invoices          Invoice[]
+  reviews           Review[]
 }
 
 enum BillingCycle {
@@ -193,6 +194,7 @@ enum InvoiceType {
   SINGLE_PURCHASE
   SUBSCRIPTION
   REFUND
+  CONTRIBUTION
 }
 
 enum InvoiceStatus {
@@ -307,6 +309,7 @@ model App {
   developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
   name        String
   status      String    @default("draft") // draft, review, live, rejected, terminated
+  visibility  String    @default("public") // public, unlisted, private
   color       String    @default("bg-white")
   users       Int       @default(0)
   
@@ -346,10 +349,50 @@ model App {
   reviewerDeclaration Boolean? @default(false)
 
   
+  // Store Info & Privacy
+  privacyTracking String[] // Identifiers, Usage Data, etc.
+  privacyLinked   String[] // Purchases, Location, etc.
+  ageRating       String?  @default("4+")
+  copyright       String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  history     AppHistory[]
+  builds      Build[]
+  currentBuildId String?
+  currentBuild   Build?    @relation("CurrentBuild", fields: [currentBuildId], references: [id])
+  publishedAt DateTime?
+
+  reviews     Review[]
+
   @@index([developerId])
+}
+
+model Build {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  currentForApp App[] @relation("CurrentBuild")
+  version   String
+  status    String   @default("pending") // pending, approved, rejected
+  isActive  Boolean  @default(false)
+  platforms Json?    // { "windows": { "buildId": "...", "sizeMB": 120 } }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId])
+}
+
+model AppHistory {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  action    String
+  reason    String?
+  createdAt DateTime @default(now())
+  
+  @@index([appId])
 }
 
 model Admin {
@@ -363,3 +406,22 @@ model Admin {
   updatedAt        DateTime @updatedAt
 }
 
+
+
+
+model Review {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String
+  content   String   @db.Text
+  userName  String?  // Snapshot or fallback
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId])
+  @@index([userId])
+}

@@ -6,7 +6,7 @@ import { Response } from 'express';
 @Controller('api/v1/revenue')
 @UseGuards(AuthGuard('jwt'))
 export class RevenueController {
-  constructor(private readonly developersService: DevelopersService) {}
+  constructor(private readonly developersService: DevelopersService) { }
 
   @Get('summary')
   async getSummary(@Req() req: any) {
@@ -14,10 +14,15 @@ export class RevenueController {
   }
 
   @Get('transactions')
-  async getTransactions(@Req() req: any, @Query('limit') limit: string) {
+  async getTransactions(
+    @Req() req: any,
+    @Query('limit') limit: string,
+    @Query('page') page: string,
+  ) {
     return this.developersService.getRevenueTransactions(
       req.user.id,
-      parseInt(limit) || 20,
+      parseInt(limit) || 10,
+      parseInt(page) || 1,
     );
   }
 

@@ -20,6 +20,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { SupportModule } from './modules/support/support.module';
 import { AcquireModule } from './modules/acquire/acquire.module';
 import { DevelopersModule } from './modules/developers/developers.module';
+import { StoreModule } from './modules/store/store.module';
 
 @Module({
   imports: [
@@ -46,8 +47,9 @@ import { DevelopersModule } from './modules/developers/developers.module';
     SupportModule,
     AcquireModule,
     DevelopersModule,
+    StoreModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

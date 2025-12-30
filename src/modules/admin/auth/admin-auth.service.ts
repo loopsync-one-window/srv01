@@ -25,13 +25,16 @@ export class AdminAuthService {
 
   async login(admin: any) {
     const payload = {
-      email: admin.email,
+      username: admin.email,
       sub: admin.id,
-      role: admin.role,
       type: 'admin',
+      role: admin.role
     };
+
+    const accessToken = this.jwtService.sign(payload);
+
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken,
       admin: {
         id: admin.id,
         email: admin.email,
@@ -42,7 +45,6 @@ export class AdminAuthService {
   }
 
   async register(data: { email: string; password: string; fullName: string }) {
-    // Check if admin exists
     const existing = await this.prisma.admin.findUnique({
       where: { email: data.email },
     });

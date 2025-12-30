@@ -12,18 +12,20 @@ import { DevelopersService } from './developers.service';
 @Controller('api/v1/analytics')
 @UseGuards(AuthGuard('jwt'))
 export class AnalyticsController {
-  constructor(private readonly developersService: DevelopersService) {}
+  constructor(private readonly developersService: DevelopersService) { }
 
   @Get('overview')
   async getOverview(
     @Req() req: any,
     @Query('range') range: string,
     @Query('region') region: string,
+    @Query('appId') appId: string,
   ) {
     return this.developersService.getAnalyticsOverview(
       req.user.id,
       range || '7d',
       region || 'worldwide',
+      appId
     );
   }
 
@@ -32,11 +34,13 @@ export class AnalyticsController {
     @Req() req: any,
     @Query('range') range: string,
     @Query('region') region: string,
+    @Query('appId') appId: string,
   ) {
     return this.developersService.getAnalyticsTraffic(
       req.user.id,
       range || '7d',
       region || 'worldwide',
+      appId
     );
   }
 
@@ -45,16 +49,18 @@ export class AnalyticsController {
     @Req() req: any,
     @Query('range') range: string,
     @Query('region') region: string,
+    @Query('appId') appId: string,
   ) {
     return this.developersService.getAnalyticsDevices(
       req.user.id,
       range || '7d',
       region || 'worldwide',
+      appId
     );
   }
 
   @Get('realtime')
-  async getRealtime(@Req() req: any) {
-    return this.developersService.getAnalyticsRealtime(req.user.id);
+  async getRealtime(@Req() req: any, @Query('appId') appId: string) {
+    return this.developersService.getAnalyticsRealtime(req.user.id, appId);
   }
 }
