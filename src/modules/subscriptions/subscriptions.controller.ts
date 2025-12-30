@@ -22,7 +22,7 @@ export class SubscriptionsController {
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-  ) {}
+  ) { }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')

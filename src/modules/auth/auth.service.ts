@@ -293,7 +293,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch {}
+      } catch { }
     }
     if (!userId && accessToken) {
       try {
@@ -302,7 +302,7 @@ export class AuthService {
           ignoreExpiration: true,
         });
         userId = payload.sub;
-      } catch {}
+      } catch { }
     }
     if (!userId) {
       return { message: 'No valid token provided' };

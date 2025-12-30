@@ -237,4 +237,16 @@ export class AdminController {
   async getAllContributions() {
     return this.developersService.getAllContributions();
   }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('apps/:id/reviews')
+  async getAppReviews(@Param('id') id: string) {
+    return this.developersService.getReviewsForAdmin(id);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Delete('apps/:id/reviews/:reviewId')
+  async deleteAppReview(@Param('id') id: string, @Param('reviewId') reviewId: string) {
+    return this.developersService.deleteReviewAdmin(id, reviewId);
+  }
 }

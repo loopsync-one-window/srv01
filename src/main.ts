@@ -5,9 +5,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn']
+        : ['log', 'debug', 'error', 'warn', 'verbose'],
+  });
 
   // Enable CORS
   app.enableCors();
@@ -40,6 +46,10 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  // Increase payload size limit
+  app.use(json({ limit: '500mb' }));
+  app.use(urlencoded({ extended: true, limit: '500mb' }));
 
   const port = process.env.PORT || 8000;
   await app.listen(port);

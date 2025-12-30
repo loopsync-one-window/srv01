@@ -1147,6 +1147,9 @@ export class DevelopersService {
             email: true,
           },
         },
+        _count: {
+          select: { reviews: true },
+        },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -1392,5 +1395,33 @@ export class DevelopersService {
       url: `https://${bucketName}.s3.ap-south-1.amazonaws.com/${key}`,
       filename: file.originalname
     };
+  }
+
+  async getReviewsForAdmin(appId: string) {
+    // @ts-ignore
+    const reviews = await this.prisma.review.findMany({
+      where: { appId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { fullName: true, email: true } }
+      }
+    });
+
+    return reviews.map((r: any) => ({
+      ...r,
+      userName: r.user ? r.user.fullName : 'Guest',
+      userEmail: r.user ? r.user.email : 'Unknown'
+    }));
+  }
+
+  async deleteReviewAdmin(appId: string, reviewId: string) {
+    // @ts-ignore
+    const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
+
+    if (!review) throw new NotFoundException('Review not found');
+
+    // @ts-ignore
+    await this.prisma.review.delete({ where: { id: reviewId } });
+    return { success: true };
   }
 }
