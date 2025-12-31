@@ -1292,12 +1292,13 @@ export class SubscriptionsService {
       ? providerStatus.toLowerCase() === 'cancelled' ||
       providerStatus.toLowerCase() === 'halted' ||
       providerStatus.toLowerCase() === 'paused' ||
-      providerStatus.toLowerCase() === 'expired'
+      providerStatus.toLowerCase() === 'expired' ||
+      providerStatus.toLowerCase() === 'pending'
       : false;
 
     // Strict Status Sync
     if (provider.found && providerStatus) {
-      // If provider says cancelled/expired/halted but local is ACTIVE, update local
+      // If provider says cancelled/expired/halted/pending but local is ACTIVE, update local
       if (
         isAutopayCancelled ||
         providerStatus === 'completed' || // completed usually means finished for finite subs
@@ -1306,8 +1307,10 @@ export class SubscriptionsService {
         console.log(
           `Syncing status: Provider says ${providerStatus}, cancelling/updating local subscription`,
         );
-        const newStatus =
-          providerStatus === 'past_due' ? 'PAST_DUE' : 'CANCELED';
+        let newStatus: 'CANCELED' | 'PAST_DUE' = 'CANCELED';
+        if (providerStatus === 'past_due' || providerStatus === 'pending') {
+          newStatus = 'PAST_DUE';
+        }
 
         await this.prisma.subscription.update({
           where: { id: subscription.id },
@@ -1320,6 +1323,7 @@ export class SubscriptionsService {
           local: null,
           provider,
           shouldRestrict: true,
+          reason: providerStatus === 'pending' ? 'PAYMENT_PENDING' : undefined,
         };
       }
     }
