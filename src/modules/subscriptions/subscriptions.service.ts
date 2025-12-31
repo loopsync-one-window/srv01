@@ -13,7 +13,7 @@ export class SubscriptionsService {
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   // Expose prisma for other services to use
   getPrisma() {
@@ -180,7 +180,7 @@ export class SubscriptionsService {
           // Update the in-memory object so logic below uses it
           subscription.providerPaymentId = paidInvoice.payment_id;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const isFreeTrial = await this.computeIsFreeTrial(subscription);
@@ -235,10 +235,10 @@ export class SubscriptionsService {
         isFreeTrial,
         paymentMethod: defaultPaymentMethod
           ? {
-              id: defaultPaymentMethod.id,
-              type: defaultPaymentMethod.type,
-              providerDetails: defaultPaymentMethod.providerDetails,
-            }
+            id: defaultPaymentMethod.id,
+            type: defaultPaymentMethod.type,
+            providerDetails: defaultPaymentMethod.providerDetails,
+          }
           : null,
       },
     };
@@ -481,8 +481,8 @@ export class SubscriptionsService {
       let resolvedPlanCode: string | undefined = planCode;
       let plan = resolvedPlanCode
         ? await this.prisma.plan.findUnique({
-            where: { code: resolvedPlanCode },
-          })
+          where: { code: resolvedPlanCode },
+        })
         : null;
 
       // Validate autopay payment amount and resolve plan if missing
@@ -505,8 +505,8 @@ export class SubscriptionsService {
         }
         plan = resolvedPlanCode
           ? await this.prisma.plan.findUnique({
-              where: { code: resolvedPlanCode },
-            })
+            where: { code: resolvedPlanCode },
+          })
           : null;
       }
       if (!plan) {
@@ -735,7 +735,7 @@ export class SubscriptionsService {
           ) {
             return false;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const userEmail = subscription?.user?.email;
@@ -1131,7 +1131,7 @@ export class SubscriptionsService {
       if (email) {
         try {
           await this.markEmailAsUsed(email);
-        } catch {}
+        } catch { }
       }
       return { success: true, message: 'Authorization acknowledged' };
     } catch (error) {
@@ -1290,9 +1290,77 @@ export class SubscriptionsService {
     const providerStatus = provider?.provider?.status;
     const isAutopayCancelled = providerStatus
       ? providerStatus.toLowerCase() === 'cancelled' ||
-        providerStatus.toLowerCase() === 'halted' ||
-        providerStatus.toLowerCase() === 'paused'
+      providerStatus.toLowerCase() === 'halted' ||
+      providerStatus.toLowerCase() === 'paused' ||
+      providerStatus.toLowerCase() === 'expired'
       : false;
+
+    // Strict Status Sync
+    if (provider.found && providerStatus) {
+      // If provider says cancelled/expired/halted but local is ACTIVE, update local
+      if (
+        isAutopayCancelled ||
+        providerStatus === 'completed' || // completed usually means finished for finite subs
+        (providerStatus === 'past_due' && daysRemaining <= 0)
+      ) {
+        console.log(
+          `Syncing status: Provider says ${providerStatus}, cancelling/updating local subscription`,
+        );
+        const newStatus =
+          providerStatus === 'past_due' ? 'PAST_DUE' : 'CANCELED';
+
+        await this.prisma.subscription.update({
+          where: { id: subscription.id },
+          data: { status: newStatus },
+        });
+
+        return {
+          success: true,
+          hasActiveLocalSubscription: false,
+          local: null,
+          provider,
+          shouldRestrict: true,
+        };
+      }
+    }
+
+    // --- STRICT TIME-BASED ENFORCEMENT ---
+    // Regardless of flags, if user is on PRO and > 7 days have passed 
+    // without a confirmed payment, we MUST block.
+    if (subscription.plan.code === 'PRO') {
+      const startedAtTime = new Date(subscription.startedAt).getTime();
+      // 7 days + 1 hour grace period
+      const TRIAL_LIMIT_MS = (7 * 24 * 60 * 60 * 1000) + (60 * 60 * 1000);
+      const timeSinceStart = now - startedAtTime;
+
+      const isTimeExpired = timeSinceStart > TRIAL_LIMIT_MS;
+
+      if (isTimeExpired) {
+        // Check for solid proof of payment
+        const hasDirectPayment = subscription.providerPaymentId && subscription.providerPaymentId.startsWith('pay_');
+        const hasProviderPayment = (provider?.provider?.paid_count || 0) > 0;
+
+        if (!hasDirectPayment && !hasProviderPayment) {
+          console.log(
+            `Strict Enforcement: PRO Trial limit exceeded (${Math.floor(timeSinceStart / (24 * 3600 * 1000))} days) with NO payment. Marking PAST_DUE. UserId: ${userId}`,
+          );
+
+          await this.prisma.subscription.update({
+            where: { id: subscription.id },
+            data: { status: 'PAST_DUE' },
+          });
+
+          return {
+            success: true,
+            hasActiveLocalSubscription: false,
+            local: null,
+            provider,
+            shouldRestrict: true,
+            reason: 'TRIAL_EXPIRED_NO_PAYMENT',
+          };
+        }
+      }
+    }
 
     const isFreeTrial = await this.computeIsFreeTrial(subscription);
 
